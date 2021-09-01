@@ -97,7 +97,6 @@ void loop() {
             Serial.println("setting systime...");
             setTime(gpsTimeToArduinoTime());
             lastMin = minute();
-            
           }
           refreshMatrix();
         } else {
@@ -147,11 +146,11 @@ void turnPixelsOn (uint16_t a, uint16_t b, uint16_t c) {
 
 // clears matrix, generates matrix and fills matrix
 void refreshMatrix () {
-  Serial.println("clearing matrix");
+  //Serial.println("clearing matrix");
   matrix.fillScreen(0);
-  Serial.println("convert time to matrix");
+  //Serial.println("convert time to matrix");
   timeToMatrix(hour(), minute());
-  Serial.println("lighting matrix");
+  //Serial.println("lighting matrix");
   matrix.show();
 }
 
@@ -326,15 +325,15 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
       break;
   }
 
-    // pixels for minutes in additional row
-//  for (byte i = 1; i <= minutes % 5; i++) {
-//    matrix.drawPixel(i-1,10,colors[activeColorID]);
-//  }
-//  turnPixelsOn(0,minutes % 5,10);
+  // pixels for minutes in additional row
+  for (byte i = 1; i <= minutes % 5; i++) {
+    matrix.drawPixel(i-1,10,colors[activeColorID]);
+  }
 
-  Serial.print(" +");
+  Serial.print(" + ");
   Serial.print(minutes % 5);
-  Serial.print("min");
+  Serial.print(" min");
+  Serial.println();
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -615,15 +614,14 @@ void to () {
 
 void after () {
   // noch/nach
-  turnPixelsOn(5,8,3);
   switch (lang) {
     case 0:
       Serial.print("noch");
-      turnPixelsOn(1,3,3);
+      turnPixelsOn(5,8,3);
       break;
     case 1:
       Serial.print("nach");
-      turnPixelsOn(1,3,3);
+      turnPixelsOn(5,8,3);
       break;
   }
 }
