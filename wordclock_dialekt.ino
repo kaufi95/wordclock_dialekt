@@ -5,7 +5,6 @@
 #include <Adafruit_NeoMatrix.h>
 
 // define pins
-#define LANG_BUTTON_PIN   2   // define pin for color switching
 #define COLOR_BUTTON_PIN  3   // define pin for color switching
 #define S_RX              4   // define software serial RX pin
 #define S_TX              5   // define software serial TX pin
@@ -24,12 +23,19 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix (width, height, NEOPIXEL_PIN,
 // define color modes
 const uint16_t colors[] = {
   matrix.Color(255, 255, 255),  // white
+  matrix.Color(128, 128, 128),  // darker white
   matrix.Color(255, 0, 0),      // red
-  matrix.Color(255, 255, 0),    // yellow
-  matrix.Color(255, 0, 200),    // magenta
+  matrix.Color(128, 0, 0),      // darker red
+  matrix.Color(0, 255, 0),      // green
+  matrix.Color(0, 128, 0),      // darker green
+  matrix.Color(0, 0, 255),      // blue
+  matrix.Color(0, 0, 128),      // darker blue
   matrix.Color(0, 255, 255),    // cyan
-  matrix.Color(0, 255, 0),      // green 
-  matrix.Color(0, 0, 255)       // blue
+  matrix.Color(0, 128, 128),    // darker cyan
+  matrix.Color(255, 0, 200),    // magenta
+  matrix.Color(128, 0, 100),    // darker magenta
+  matrix.Color(255, 255, 0),    // yellow
+  matrix.Color(128, 128, 0),    // darker yellow
 };
 
 // create GPS object
@@ -42,12 +48,10 @@ SoftwareSerial SoftSerial (S_RX, S_TX);
 byte eeC = 0;                                 // eeprom address for colorstate
 byte eeL = 1;                                 // eeprom address for lang
 byte activeColorID = EEPROM.read(eeC);        // current active color mode
-byte lang = EEPROM.read(eeL);                 // switch languages (0: dialekt, 1: deutsch, 2: ...)
-byte amountOfLang = 2;                        // needs to be changed when adding a new language!!!
+byte lang = 0;                                // switch languages (0: dialekt, 1: deutsch, 2: ...)
 bool testMode = false;
 byte lastMin = 0;
-bool colorSwitchOn = false;
-bool langSwitchOn = false;
+unsigned long millisOld = 0;
 
 // resets arduino on call
 void (* resetFunc) (void) = 0;
@@ -72,8 +76,7 @@ void setup() {
   matrix.show();
 
   // define color button as input
-  Serial.println("changing pinModes");
-  pinMode(LANG_BUTTON_PIN, INPUT_PULLUP);
+  Serial.println("changing pinMode");
   pinMode(COLOR_BUTTON_PIN, INPUT_PULLUP);
 }
 
@@ -102,7 +105,7 @@ void loop() {
         } else {
           Serial.println("faulty gps signal");
           // reboot on faulty gps signal
-          if (millis() >= 150000) {
+          if (millis() >= 300000) {
             Serial.println("rebooting (faulty gps signal)");
             delay(100);
             resetFunc();
@@ -117,8 +120,9 @@ void loop() {
 
   }
   
-  checkLangButton();
   checkColorButton();
+
+  if (millis () < 10000) millisOld = 0;
   
 }
 
@@ -156,30 +160,12 @@ void refreshMatrix () {
 
 // checks if colorbutton is pressed and write new value to eeprom
 void checkColorButton () {
-  if (digitalRead(COLOR_BUTTON_PIN) == 0 && !colorSwitchOn) {
+  if (digitalRead(COLOR_BUTTON_PIN) == 0 && millisOld + 500 < millis()) {
     Serial.println("changing color");
     activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(uint16_t));
     Serial.println("writing color to eeprom");
     EEPROM.put(eeC, activeColorID);
-    colorSwitchOn = true;
-  }
-  if (digitalRead(COLOR_BUTTON_PIN) == 1 && colorSwitchOn) {
-    colorSwitchOn = false;
-  }
-}
-
-// checks if langbutton is pressed and write new value to eeprom
-void checkLangButton () {
-  if (digitalRead(LANG_BUTTON_PIN) == 0 && !langSwitchOn) {
-    Serial.println("changing language");
-    lang = (lang + 1) % amountOfLang;
-    Serial.println("writing lang to eeprom");
-    EEPROM.put(eeL, lang);
-    langSwitchOn = true;
-    refreshMatrix();
-  }
-  if (digitalRead(LANG_BUTTON_PIN) == 1 && langSwitchOn) {
-    langSwitchOn = false;
+    millisOld = millis();
   }
 }
 
@@ -450,14 +436,14 @@ void six (bool e) {
 }
 
 void seven (bool e) {
-  // sieb/ne/sieben
+  // siebn/e/sieben
   switch (lang) {
     case 0:
-      Serial.print("sieb");
-      turnPixelsOn(0,3,6);
+      Serial.print("siebn");
+      turnPixelsOn(0,4,6);
       if (e) {
-        Serial.print("ne");
-        turnPixelsOn(4,5,6);
+        Serial.print("e");
+        turnPixelsOn(5,5,6);
       }
       break;
     case 1:
@@ -468,7 +454,7 @@ void seven (bool e) {
 }
 
 void eight (bool e) {
-  // achte/acht
+  // acht/e/acht
   switch (lang) {
     case 0:
       Serial.print("acht");
@@ -486,7 +472,7 @@ void eight (bool e) {
 }
 
 void nine (bool e) {
-  // nüne/neun
+  // nün/e/neun
   switch (lang) {
     case 0:
       Serial.print("nün");
@@ -814,7 +800,7 @@ void newYearSpecial (uint8_t seconds) {
       break;
     case 53:
       matrix.fillScreen(0);
-      seven(true);
+      seven(false);
       matrix.show();
       break;
     case 54:

@@ -1,11 +1,10 @@
 #include <EEPROM.h>
 
-byte eeC = 0;
-byte eeL = 1;
-
 void setup() {
-  EEPROM.put(eeC, 3);
-  EEPROM.put(eeL, 0);
+  // write color
+  EEPROM.put(0, 3);
+  // write lang
+  EEPROM.put(1, 0);
 }
 
 void loop() {
