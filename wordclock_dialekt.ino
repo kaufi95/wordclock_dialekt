@@ -1,5 +1,6 @@
 #include <EEPROM.h>
 #include <TimeLib.h>
+#include <Timezone.h>
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_NeoMatrix.h>
@@ -48,13 +49,18 @@ SoftwareSerial SoftSerial (S_RX, S_TX);
 byte eeC = 0;                                 // eeprom address for colorstate
 byte eeL = 1;                                 // eeprom address for lang
 byte activeColorID = EEPROM.read(eeC);        // current active color mode
-byte lang = 0;                                // switch languages (0: dialekt, 1: deutsch, 2: ...)
+byte lang = EEPROM.read(eeL);                 // switch languages (0: dialekt, 1: deutsch, 2: ...)
 bool testMode = false;
 byte lastMin = 0;
 unsigned long millisOld = 0;
 
 // resets arduino on call
 void (* resetFunc) (void) = 0;
+
+// define time change rules and timezone
+TimeChangeRule atST = {"ST", Last, Sun, Mar, 2, 120};  //UTC + 2 hours
+TimeChangeRule atRT = {"RT", Last, Sun, Oct, 3, 60};   //UTC + 1 hour
+Timezone AT(atST, atRT);
 
 void setup() {
   
@@ -78,6 +84,7 @@ void setup() {
   // define color button as input
   Serial.println("changing pinMode");
   pinMode(COLOR_BUTTON_PIN, INPUT_PULLUP);
+  
 }
 
 void loop() {
@@ -93,19 +100,22 @@ void loop() {
 
         if (gps.date.year() >= 2021) {
 
-          if (gps.date.day() == 31 && gps.date.month() == 12 && gps.time.hour() == 23 && gps.time.minute() == 59) newYearSpecial(gps.time.second());
-          if (testMode) newYearSpecial(gps.time.second());
-  
           if (minute() > lastMin || minute() == 0) {
             Serial.println("setting systime...");
-            setTime(gpsTimeToArduinoTime());
+            setTime(AT.toLocal(generateTime_t()));
             lastMin = minute();
           }
-          refreshMatrix();
+
+          if (!testMode && !(gps.date.day() == 31 && gps.date.month() == 12 && gps.time.hour() == 23 && gps.time.minute() == 59 && gps.time.second() >= 30)) {
+            refreshMatrix(false);
+          } else {
+            refreshMatrix(true);
+          }
+  
         } else {
-          Serial.println("faulty gps signal");
+          Serial.println("no gps fix");
           // reboot on faulty gps signal
-          if (millis() >= 300000) {
+          if (millis() >= 600000) {
             Serial.println("rebooting (faulty gps signal)");
             delay(100);
             resetFunc();
@@ -126,9 +136,9 @@ void loop() {
   
 }
 
-// generate time in timezone
-time_t gpsTimeToArduinoTime() {
-  // returns time_t from gps date and time with the given offset hours
+// generate time_t
+time_t generateTime_t() {
+  // returns time_t from gps date and time
   tmElements_t tm;
   tm.Second = gps.time.second();
   tm.Minute = gps.time.minute();
@@ -137,8 +147,7 @@ time_t gpsTimeToArduinoTime() {
   tm.Month = gps.date.month();
   tm.Year = gps.date.year() - 1970;
   time_t time = makeTime(tm);
-  // adding 7200 seconds for UCT+2
-  return time + 7200;
+  return time;
 }
 
 // turns the pixels from a to b of a row on
@@ -149,23 +158,37 @@ void turnPixelsOn (uint16_t a, uint16_t b, uint16_t c) {
 }
 
 // clears matrix, generates matrix and fills matrix
-void refreshMatrix () {
+void refreshMatrix (bool newYear) {
   //Serial.println("clearing matrix");
   matrix.fillScreen(0);
-  //Serial.println("convert time to matrix");
-  timeToMatrix(hour(), minute());
+  if (!newYear) {
+    //Serial.println("convert time to matrix");
+    timeToMatrix(hour(), minute());
+  } else {
+    newYearSpecial(gps.time.second());
+  }
   //Serial.println("lighting matrix");
   matrix.show();
 }
 
 // checks if colorbutton is pressed and write new value to eeprom
 void checkColorButton () {
-  if (digitalRead(COLOR_BUTTON_PIN) == 0 && millisOld + 500 < millis()) {
+  if (digitalRead(COLOR_BUTTON_PIN) == 0 && millisOld + 1000 < millis()) {
     Serial.println("changing color");
     activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(uint16_t));
     Serial.println("writing color to eeprom");
     EEPROM.put(eeC, activeColorID);
+    printEEPROM();
     millisOld = millis();
+  }
+}
+
+void printEEPROM () {
+  for (int i = 0; i < 2; i++) {
+    Serial.print("Byte ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.println(EEPROM.read(i));
   }
 }
 
@@ -187,7 +210,10 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
   Serial.print(" ");
   
   // show minutes
-  if (minutes >= 5 && minutes < 10) {
+  if (minutes >= 0 && minutes < 5) {
+    uhr();
+  }
+  else if (minutes >= 5 && minutes < 10) {
     five(true, false);
     Serial.print(" ");
     after();
@@ -211,6 +237,7 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
     five(true, false);
     Serial.print(" ");
     to();
+    Serial.print(" ");
     half();
   }
   else if (minutes >= 30 && minutes < 35) {
@@ -291,7 +318,7 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
       break;
     case 7:
       // Siebne
-      seven(true);
+      seven(true, true);
       break;
     case 8:
       // Achte
@@ -435,12 +462,16 @@ void six (bool e) {
   }
 }
 
-void seven (bool e) {
+void seven (bool n, bool e) {
   // siebn/e/sieben
   switch (lang) {
     case 0:
       Serial.print("siebn");
-      turnPixelsOn(0,4,6);
+      turnPixelsOn(0,3,6);
+      if (n) {
+        Serial.print("n");
+        turnPixelsOn(4,4,6);
+      }
       if (e) {
         Serial.print("e");
         turnPixelsOn(5,5,6);
@@ -633,7 +664,7 @@ void uhr () {
       break;
     case 1:
       Serial.print(" uhr");
-      turnPixelsOn(0,3,4);
+      turnPixelsOn(8,10,9);
       break;
   }
 }
@@ -700,138 +731,111 @@ void newYearSpecial (uint8_t seconds) {
   switch (seconds) {
     case 30:
       matrix.fillScreen(0);
-      matrix.show();
       break;
     case 34:
       matrix.fillScreen(colors[activeColorID]);
-      matrix.show();
       break;
     case 35:
       matrix.fillScreen(0);
-      matrix.show();
       break;
     case 36:
       matrix.fillScreen(colors[activeColorID]);
-      matrix.show();
       break;
     case 37:
       matrix.fillScreen(0);
-      matrix.show();
       break;
     case 38:
       matrix.fillScreen(colors[activeColorID]);
-      matrix.show();
       break;
     case 39:
       matrix.fillScreen(0);
-      matrix.show();
       break;
     case 40:
       matrix.fillScreen(0);
       twenty();
-      matrix.show();
       break;
     case 41:
       matrix.fillScreen(0);
       nine(false);
       ten(false, false);
-      matrix.show();
       break;
     case 42:
       matrix.fillScreen(0);
       eight(false);
       ten(false, false);
-      matrix.show();
       break;
     case 43:
       matrix.fillScreen(0);
-      seven(false);
+      seven(false, false);
       ten(false, false);
-      matrix.show();
       break;
     case 44:
       matrix.fillScreen(0);
       six(false);
       ten(false, false);
-      matrix.show();
       break;
     case 45:
       matrix.fillScreen(0);
       five(false, false);
       ten(false, false);
-      matrix.show();
       break;
     case 46:
       matrix.fillScreen(0);
       four(false);
       ten(false, false);
-      matrix.show();
       break;
     case 47:
       matrix.fillScreen(0);
       three();
       ten(false, false);
-      matrix.show();
       break;
     case 48:
       matrix.fillScreen(0);
       twelve(false);
-      matrix.show();
       break;
     case 49:
       matrix.fillScreen(0);
       eleven(false);
-      matrix.show();
       break;
     case 50:
       matrix.fillScreen(0);
       ten(false, false);
-      matrix.show();
       break;
     case 51:
       matrix.fillScreen(0);
       nine(false);
-      matrix.show();
       break;
     case 52:
       matrix.fillScreen(0);
       eight(false);
-      matrix.show();
       break;
     case 53:
       matrix.fillScreen(0);
-      seven(false);
-      matrix.show();
+      seven(true, false);
       break;
     case 54:
       matrix.fillScreen(0);
       six(false);
-      matrix.show();
       break;
     case 55:
       matrix.fillScreen(0);
       five(false, false);
-      matrix.show();
       break;
     case 56:
       matrix.fillScreen(0);
       four(false);
-      matrix.show();
       break;
     case 57:
       matrix.fillScreen(0);
       three();
-      matrix.show();
       break;
     case 58:
       matrix.fillScreen(0);
       two();
-      matrix.show();
       break;
     case 59:
       matrix.fillScreen(0);
       one();
-      matrix.show();
       break;
     default: break;
   }
