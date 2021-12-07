@@ -1,6 +1,7 @@
 #include <EEPROM.h>
 #include <TimeLib.h>
 #include <Timezone.h>
+#include <ezButton.h>
 #include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_NeoMatrix.h>
@@ -17,9 +18,9 @@ const int height = 11;    // height of LED matrix + additional row for minute le
 
 // create Adafruit_NeoMatrix object
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix (width, height, NEOPIXEL_PIN,
-  NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
-  NEO_MATRIX_ROWS    + NEO_MATRIX_ZIGZAG,
-  NEO_GRB            + NEO_KHZ800);
+                            NEO_MATRIX_TOP     + NEO_MATRIX_LEFT +
+                            NEO_MATRIX_ROWS    + NEO_MATRIX_ZIGZAG,
+                            NEO_GRB            + NEO_KHZ800);
 
 // define color modes
 const uint16_t colors[] = {
@@ -42,17 +43,26 @@ const uint16_t colors[] = {
 // create GPS object
 TinyGPSPlus gps;
 
+// create button object
+ezButton button(COLOR_BUTTON_PIN);  // create ezButton object that attach to led color button pin;
+
 // configure softserial
 SoftwareSerial SoftSerial (S_RX, S_TX);
 
 // define global variables
-byte eeC = 0;                                 // eeprom address for colorstate
-byte eeL = 1;                                 // eeprom address for lang
+int eeC = 0;                                  // eeprom address for colorstate
+int eeL = 1;                                  // eeprom address for lang
 byte activeColorID = EEPROM.read(eeC);        // current active color mode
 byte lang = EEPROM.read(eeL);                 // switch languages (0: dialekt, 1: deutsch, 2: ...)
 bool testMode = false;
 byte lastMin = 0;
-unsigned long millisOld = 0;
+
+int currentState;                // the current reading from the input pin
+int lastSteadyState = LOW;       // the previous steady state from the input pin
+int lastFlickerableState = LOW;  // the previous flickerable state from the input pin
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
+
 
 // resets arduino on call
 void (* resetFunc) (void) = 0;
@@ -63,7 +73,7 @@ TimeChangeRule atRT = {"RT", Last, Sun, Oct, 3, 60};   //UTC + 1 hour
 Timezone AT(atST, atRT);
 
 void setup() {
-  
+
   // enable serial output
   Serial.begin(9600);
   Serial.println("WordClock");
@@ -84,15 +94,16 @@ void setup() {
   // define color button as input
   Serial.println("changing pinMode");
   pinMode(COLOR_BUTTON_PIN, INPUT_PULLUP);
-  
+  button.setDebounceTime(50); // set debounce time to 50 milliseconds
+
 }
 
 void loop() {
 
   while (SoftSerial.available() > 0) {
-  
+
     if (gps.encode(SoftSerial.read())) {
-      
+
       // get time from GPS module
       if (gps.time.isValid() && gps.date.isValid()) {
 
@@ -111,7 +122,7 @@ void loop() {
           } else {
             refreshMatrix(true);
           }
-  
+
         } else {
           Serial.println("no gps fix");
           // reboot on faulty gps signal
@@ -121,7 +132,7 @@ void loop() {
             resetFunc();
           }
         }
-        
+
       } else {
         Serial.println("gps signal invalid! (time or date)");
       }
@@ -129,11 +140,9 @@ void loop() {
     }
 
   }
-  
+
   checkColorButton();
 
-  if (millis () < 10000) millisOld = 0;
-  
 }
 
 // generate time_t
@@ -143,7 +152,7 @@ time_t generateTime_t() {
   tm.Second = gps.time.second();
   tm.Minute = gps.time.minute();
   tm.Hour = gps.time.hour();
-  tm.Day = gps.date.day(); 
+  tm.Day = gps.date.day();
   tm.Month = gps.date.month();
   tm.Year = gps.date.year() - 1970;
   time_t time = makeTime(tm);
@@ -153,7 +162,7 @@ time_t generateTime_t() {
 // turns the pixels from a to b of a row on
 void turnPixelsOn (uint16_t a, uint16_t b, uint16_t c) {
   for (int i = a; i <= b; i++) {
-    matrix.drawPixel(i,c,colors[activeColorID]);
+    matrix.drawPixel(i, c, colors[activeColorID]);
   }
 }
 
@@ -165,21 +174,20 @@ void refreshMatrix (bool newYear) {
     //Serial.println("convert time to matrix");
     timeToMatrix(hour(), minute());
   } else {
-    newYearSpecial(gps.time.second());
+    newYearSpecial(second());
   }
-  //Serial.println("lighting matrix");
   matrix.show();
 }
 
 // checks if colorbutton is pressed and write new value to eeprom
 void checkColorButton () {
-  if (digitalRead(COLOR_BUTTON_PIN) == 0 && millisOld + 1000 < millis()) {
+  button.loop(); // MUST call the loop() function first
+  if (button.isPressed()) {
     Serial.println("changing color");
-    activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(uint16_t));
+    activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(colors[0]));
     Serial.println("writing color to eeprom");
     EEPROM.put(eeC, activeColorID);
     printEEPROM();
-    millisOld = millis();
   }
 }
 
@@ -197,18 +205,21 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
 
   Serial.println("timeToMatrix");
   // Es isch/ist
-  if (lang == 0) {
-    Serial.print("Es isch");
-    turnPixelsOn(1,2,0);
-    turnPixelsOn(5,8,0);
-  } else if (lang == 1) {
-    Serial.print("Es ist");
-    turnPixelsOn(1,2,0);
-    turnPixelsOn(5,7,0);
+  switch (lang) {
+    case 0:
+      Serial.print("Es isch");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 8, 0);
+      break;
+    case 1:
+      Serial.print("Es ist");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 7, 0);
+      break;
   }
 
   Serial.print(" ");
-  
+
   // show minutes
   if (minutes >= 0 && minutes < 5) {
     uhr();
@@ -223,7 +234,8 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
     Serial.print(" ");
     after();
   }
-  else if (minutes >= 15 && minutes < 20) {;
+  else if (minutes >= 15 && minutes < 20) {
+    ;
     quarter();
     Serial.print(" ");
     after();
@@ -275,15 +287,15 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
 
   // convert hours to 12h format
   if (hours >= 12) {
-      hours -= 12;
+    hours -= 12;
   }
-  
+
   if (minutes >= 25) {
-      hours++;
+    hours++;
   }
-  
+
   if (hours == 12) {
-      hours = 0;
+    hours = 0;
   }
 
   // show hours
@@ -340,7 +352,7 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
 
   // pixels for minutes in additional row
   for (byte i = 1; i <= minutes % 5; i++) {
-    matrix.drawPixel(i-1,10,colors[activeColorID]);
+    matrix.drawPixel(i - 1, 10, colors[activeColorID]);
   }
 
   Serial.print(" + ");
@@ -358,11 +370,11 @@ void one () {
   switch (lang) {
     case 0:
       Serial.print("oans");
-      turnPixelsOn(7,10,4);
+      turnPixelsOn(7, 10, 4);
       break;
     case 1:
-     Serial.print("eins");
-      turnPixelsOn(7,10,4);
+      Serial.print("eins");
+      turnPixelsOn(7, 10, 4);
       break;
   }
 }
@@ -371,12 +383,12 @@ void two () {
   // zwoa/zwei
   switch (lang) {
     case 0:
-     Serial.print("zwoa");
-      turnPixelsOn(5,8,4);
+      Serial.print("zwoa");
+      turnPixelsOn(5, 8, 4);
       break;
     case 1:
       Serial.print("zwei");
-      turnPixelsOn(5,8,4);
+      turnPixelsOn(5, 8, 4);
       break;
   }
 }
@@ -386,11 +398,11 @@ void three () {
   switch (lang) {
     case 0:
       Serial.print("drei");
-      turnPixelsOn(0,3,5);
+      turnPixelsOn(0, 3, 5);
       break;
     case 1:
       Serial.print("drei");
-      turnPixelsOn(0,3,5);
+      turnPixelsOn(0, 3, 5);
       break;
   }
 }
@@ -400,15 +412,15 @@ void four (bool e) {
   switch (lang) {
     case 0:
       Serial.print("vier");
-      turnPixelsOn(0,3,8);
+      turnPixelsOn(0, 3, 8);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(4,4,8);
+        turnPixelsOn(4, 4, 8);
       }
       break;
     case 1:
       Serial.print("vier");
-      turnPixelsOn(0,3,8);
+      turnPixelsOn(0, 3, 8);
       break;
   }
 }
@@ -419,26 +431,26 @@ void five (bool min, bool e) {
     switch (lang) {
       case 0:
         Serial.print("fünf");
-        turnPixelsOn(0,3,1);
+        turnPixelsOn(0, 3, 1);
         break;
       case 1:
         Serial.print("fünf");
-        turnPixelsOn(0,3,1);
+        turnPixelsOn(0, 3, 1);
         break;
     }
   } else {
     switch (lang) {
       case 0:
         Serial.print("fünf");
-        turnPixelsOn(0,3,7);
+        turnPixelsOn(0, 3, 7);
         if (e) {
           Serial.print("e");
-          turnPixelsOn(4,4,7);
+          turnPixelsOn(4, 4, 7);
         }
         break;
       case 1:
         Serial.print("fünf");
-        turnPixelsOn(0,3,7);
+        turnPixelsOn(0, 3, 7);
         break;
     }
   }
@@ -449,15 +461,15 @@ void six (bool e) {
   switch (lang) {
     case 0:
       Serial.print("sechs");
-      turnPixelsOn(5,9,5);
+      turnPixelsOn(5, 9, 5);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(10,10,5);
+        turnPixelsOn(10, 10, 5);
       }
       break;
     case 1:
       Serial.print("sechs");
-      turnPixelsOn(5,9,5);
+      turnPixelsOn(5, 9, 5);
       break;
   }
 }
@@ -467,19 +479,19 @@ void seven (bool n, bool e) {
   switch (lang) {
     case 0:
       Serial.print("siebn");
-      turnPixelsOn(0,3,6);
+      turnPixelsOn(0, 3, 6);
       if (n) {
         Serial.print("n");
-        turnPixelsOn(4,4,6);
+        turnPixelsOn(4, 4, 6);
       }
       if (e) {
         Serial.print("e");
-        turnPixelsOn(5,5,6);
+        turnPixelsOn(5, 5, 6);
       }
       break;
     case 1:
       Serial.print("sieben");
-      turnPixelsOn(0,5,6);
+      turnPixelsOn(0, 5, 6);
       break;
   }
 }
@@ -489,15 +501,15 @@ void eight (bool e) {
   switch (lang) {
     case 0:
       Serial.print("acht");
-      turnPixelsOn(6,9,7);
+      turnPixelsOn(6, 9, 7);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(10,10,7);
+        turnPixelsOn(10, 10, 7);
       }
       break;
     case 1:
       Serial.print("acht");
-      turnPixelsOn(6,9,7);
+      turnPixelsOn(6, 9, 7);
       break;
   }
 }
@@ -507,15 +519,15 @@ void nine (bool e) {
   switch (lang) {
     case 0:
       Serial.print("nün");
-      turnPixelsOn(7,9,6);
+      turnPixelsOn(7, 9, 6);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(10,10,6);
+        turnPixelsOn(10, 10, 6);
       }
       break;
     case 1:
       Serial.print("neun");
-      turnPixelsOn(7,10,6);
+      turnPixelsOn(7, 10, 6);
       break;
   }
 }
@@ -526,26 +538,26 @@ void ten (bool min, bool e) {
     switch (lang) {
       case 0:
         Serial.print("zehn");
-        turnPixelsOn(7,10,2);
+        turnPixelsOn(7, 10, 2);
         break;
       case 1:
         Serial.print("zehn");
-        turnPixelsOn(7,10,2);
+        turnPixelsOn(7, 10, 2);
         break;
     }
   } else {
     switch (lang) {
       case 0:
         Serial.print("zehn");
-        turnPixelsOn(6,9,8);
+        turnPixelsOn(6, 9, 8);
         if (e) {
           Serial.print("e");
-          turnPixelsOn(10,10,8);
+          turnPixelsOn(10, 10, 8);
         }
         break;
       case 1:
         Serial.print("zehn");
-        turnPixelsOn(3,6,9);
+        turnPixelsOn(3, 6, 9);
         break;
     }
   }
@@ -556,15 +568,15 @@ void eleven (bool e) {
   switch (lang) {
     case 0:
       Serial.print("elf");
-      turnPixelsOn(0,2,9);
+      turnPixelsOn(0, 2, 9);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(3,3,9);
+        turnPixelsOn(3, 3, 9);
       }
       break;
     case 1:
       Serial.print("elf");
-      turnPixelsOn(0,2,9);
+      turnPixelsOn(0, 2, 9);
       break;
   }
 }
@@ -574,14 +586,14 @@ void twelve (bool e) {
   Serial.print("zwölf");
   switch (lang) {
     case 0:
-      turnPixelsOn(5,9,9);
+      turnPixelsOn(5, 9, 9);
       if (e) {
         Serial.print("e");
-        turnPixelsOn(10,10,9);
+        turnPixelsOn(10, 10, 9);
       }
       break;
     case 1:
-      turnPixelsOn(5,9,8);
+      turnPixelsOn(5, 9, 8);
       break;
   }
 }
@@ -591,10 +603,10 @@ void quarter () {
   Serial.print("viertel");
   switch (lang) {
     case 0:
-      turnPixelsOn(0,6,2);
+      turnPixelsOn(0, 6, 2);
       break;
     case 1:
-      turnPixelsOn(0,6,2);
+      turnPixelsOn(0, 6, 2);
       break;
   }
 }
@@ -604,10 +616,10 @@ void twenty () {
   Serial.print("zwanzig");
   switch (lang) {
     case 0:
-      turnPixelsOn(4,10,1);
+      turnPixelsOn(4, 10, 1);
       break;
     case 1:
-      turnPixelsOn(4,10,1);
+      turnPixelsOn(4, 10, 1);
       break;
   }
 }
@@ -616,15 +628,15 @@ void twenty () {
 
 void to () {
   // vor/vor
-  turnPixelsOn(1,3,3);
+  turnPixelsOn(1, 3, 3);
   switch (lang) {
     case 0:
       Serial.print("vor");
-      turnPixelsOn(1,3,3);
+      turnPixelsOn(1, 3, 3);
       break;
     case 1:
       Serial.print("vor");
-      turnPixelsOn(1,3,3);
+      turnPixelsOn(1, 3, 3);
       break;
   }
 }
@@ -634,11 +646,11 @@ void after () {
   switch (lang) {
     case 0:
       Serial.print("noch");
-      turnPixelsOn(5,8,3);
+      turnPixelsOn(5, 8, 3);
       break;
     case 1:
       Serial.print("nach");
-      turnPixelsOn(5,8,3);
+      turnPixelsOn(5, 8, 3);
       break;
   }
 }
@@ -648,11 +660,11 @@ void half () {
   switch (lang) {
     case 0:
       Serial.print("halb");
-      turnPixelsOn(0,3,4);
+      turnPixelsOn(0, 3, 4);
       break;
     case 1:
       Serial.print("halb");
-      turnPixelsOn(0,3,4);
+      turnPixelsOn(0, 3, 4);
       break;
   }
 }
@@ -664,7 +676,7 @@ void uhr () {
       break;
     case 1:
       Serial.print(" uhr");
-      turnPixelsOn(8,10,9);
+      turnPixelsOn(8, 10, 9);
       break;
   }
 }
@@ -723,7 +735,7 @@ void displayinfo () {
   Serial.print(second());
 
   Serial.println();
-  
+
 }
 
 // newYearSpecial
