@@ -6,9 +6,21 @@
 #include <TinyGPS++.h>
 #include <Adafruit_NeoMatrix.h>
 
+// define setup
+bool testMode = false;
+
 // define pins
-#define COLOR_BUTTON_PIN  3   // define pin for color switching
-#define NEOPIXEL_PIN      6   // define pin for Neopixels
+#define COLOR_BUTTON_PIN  3     // define pin for color switching
+#define NEOPIXEL_PIN      6     // define pin for Neopixels
+
+// define global variables
+bool initialSync;
+const int eeC = 0;                  // eeprom address for colorstate
+const int eeL = 1;                  // eeprom address for lang
+const int eeF = 2;                  // eeprom address for flash
+int activeColorID;                  // current active color mode
+int lang;                           // switch languages (0: dialekt, 1: deutsch, 2: ...)
+unsigned long debounceDelay = 250;  // the debounce time for button
 
 // define parameters
 const int width = 11;     // width of LED matirx
@@ -47,16 +59,6 @@ RTC_DS3231 rtc;
 // create button object
 ezButton button(COLOR_BUTTON_PIN);  // create ezButton object that attach to led color button pin;
 
-// define global variables
-const int eeC = 0;                      // eeprom address for colorstate
-const int eeL = 1;                      // eeprom address for lang
-int activeColorID = EEPROM.read(eeC);   // current active color mode
-const int lang = EEPROM.read(eeL);      // switch languages (0: dialekt, 1: deutsch, 2: ...)
-bool testMode = false;
-bool initialSync;
-
-unsigned long debounceDelay = 250;    // the debounce time; increase if the output flickers
-
 // define time change rules and timezone
 TimeChangeRule atST = {"ST", Last, Sun, Mar, 2, 120};  //UTC + 2 hours
 TimeChangeRule atRT = {"RT", Last, Sun, Oct, 3, 60};   //UTC + 1 hour
@@ -67,7 +69,7 @@ void setup() {
   // enable serial output
   Serial.begin(9600);
   Serial.println("WordClock");
-  Serial.println("version 1.3");
+  Serial.println("version 1.4");
   Serial.println("by kaufi");
 
   // initialize hardware serial at 9600 baud
@@ -99,14 +101,30 @@ void setup() {
   pinMode(COLOR_BUTTON_PIN, INPUT_PULLUP);
   button.setDebounceTime(debounceDelay);
 
+  // sync on first valid gps signal
   initialSync = true;
-  
+
+  // flash eeprom if not already flashed
+  if (EEPROM.read(eeF) != 1) {
+    // write color
+    EEPROM.write(eeC, 0);
+
+    // write lang (0 dialekt; 1 deutsch)
+    EEPROM.write(eeL, 0);
+
+    // write byte for flash
+    EEPROM.write(eeF, 1);
+  }
+
+  // read color and lang
+  activeColorID = EEPROM.read(eeC);   // current active color mode
+  lang = EEPROM.read(eeL);            // switch languages (0: dialekt, 1: deutsch, 2: ...)
+
   printEEPROM();
 
 }
 
 void loop() {
-
   //checkColorButton();
   refreshMatrix();
   smartDelay(1000);
@@ -114,7 +132,6 @@ void loop() {
   displayinfoGPS();
   displayinfoSYS();
   checkTime();
-
 }
 
 void checkTime() {
@@ -192,7 +209,7 @@ void checkColorButton () {
 }
 
 void printEEPROM () {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     Serial.print("Byte ");
     Serial.print(i);
     Serial.print(": ");
