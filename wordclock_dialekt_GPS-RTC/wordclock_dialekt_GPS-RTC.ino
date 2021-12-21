@@ -8,6 +8,8 @@
 
 // define setup
 bool testMode = false;
+const byte color = 0;
+const byte language = 0;
 
 // define pins
 #define COLOR_BUTTON_PIN  3     // define pin for color switching
@@ -17,9 +19,8 @@ bool testMode = false;
 bool initialSync;
 const int eeC = 0;                  // eeprom address for colorstate
 const int eeL = 1;                  // eeprom address for lang
-const int eeF = 2;                  // eeprom address for flash
-int activeColorID;                  // current active color mode
-int lang;                           // switch languages (0: dialekt, 1: deutsch, 2: ...)
+byte activeColorID;                 // current active color mode
+byte lang;                          // active language
 unsigned long debounceDelay = 250;  // the debounce time for button
 
 // define parameters
@@ -104,21 +105,20 @@ void setup() {
   // sync on first valid gps signal
   initialSync = true;
 
-  // flash eeprom if not already flashed
-  if (EEPROM.read(eeF) != 1) {
+  if (digitalRead(COLOR_BUTTON_PIN) == 0) {
+    Serial.println("writing eeprom");
+
     // write color
-    EEPROM.write(eeC, 0);
+    EEPROM.write(eeC, color);
 
     // write lang (0 dialekt; 1 deutsch)
-    EEPROM.write(eeL, 0);
-
-    // write byte for flash
-    EEPROM.write(eeF, 1);
+    EEPROM.write(eeL, language);
   }
 
   // read color and lang
+  Serial.println("reading eeprom @ setup");
   activeColorID = EEPROM.read(eeC);   // current active color mode
-  lang = EEPROM.read(eeL);            // switch languages (0: dialekt, 1: deutsch, 2: ...)
+  lang          = EEPROM.read(eeL);   // switch languages (0: dialekt, 1: deutsch, 2: ...)
 
   printEEPROM();
 
@@ -131,10 +131,10 @@ void loop() {
   displayinfoRTC();
   displayinfoGPS();
   displayinfoSYS();
-  checkTime();
+  syncTime();
 }
 
-void checkTime() {
+void syncTime() {
   // get time from GPS module
   if (gps.time.isValid() && gps.date.isValid() && gps.date.year() >= 2021) {
     if (initialSync || rtc.now().hour() == 2 && gps.time.second() != rtc.now().second()) {
@@ -203,13 +203,14 @@ void checkColorButton () {
     Serial.println("changing color");
     activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(colors[0]));
     Serial.println("writing color to eeprom");
-    EEPROM.put(eeC, activeColorID);
+    EEPROM.write(eeC, activeColorID);
     printEEPROM();
   }
 }
 
 void printEEPROM () {
-  for (int i = 0; i < 3; i++) {
+  Serial.println("reading eeprom");
+  for (int i = 0; i < 2; i++) {
     Serial.print("Byte ");
     Serial.print(i);
     Serial.print(": ");
@@ -414,7 +415,11 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
       break;
     case 1:
       // Oans
-      one();
+      if (minutes >= 0 && minutes < 5) {
+        one(false);
+      } else {
+        one(true);
+      }
       break;
     case 2:
       // Zwoa
@@ -473,7 +478,7 @@ void timeToMatrix (uint8_t hours, uint8_t minutes) {
 
 // numbers as labels
 
-void one () {
+void one (bool s) {
   // oans/eins
   switch (lang) {
     case 0:
@@ -481,8 +486,13 @@ void one () {
       turnPixelsOn(7, 10, 4);
       break;
     case 1:
-      Serial.print("eins");
-      turnPixelsOn(7, 10, 4);
+      if (s) {
+        Serial.print("eins");
+        turnPixelsOn(7, 10, 4);
+      } else {
+        Serial.print("ein");
+        turnPixelsOn(7, 9, 4);
+      }
       break;
   }
 }
@@ -900,7 +910,7 @@ void newYearSpecial (uint8_t seconds) {
       break;
     case 59:
       matrix.fillScreen(0);
-      one();
+      one(true);
       break;
     default: break;
   }
