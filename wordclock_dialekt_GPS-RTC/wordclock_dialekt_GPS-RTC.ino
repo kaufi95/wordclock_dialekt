@@ -135,11 +135,14 @@ void loop() {
 }
 
 void syncTime() {
+  
+  rtc.adjust(AT.toLocal(generateTimeByRTC()));
+
   // get time from GPS module
   if (gps.time.isValid() && gps.date.isValid() && gps.date.year() >= 2021) {
     if (initialSync || rtc.now().hour() == 2 && gps.time.second() != rtc.now().second()) {
       Serial.println("setting rtctime...");
-      rtc.adjust(AT.toLocal(generateTime_t()));
+      rtc.adjust(AT.toLocal(generateTimeByGPS()));
       if (initialSync) {
         Serial.println("initialSync");
         initialSync = false;
@@ -160,8 +163,21 @@ static void smartDelay(unsigned long ms) {
   } while (millis() - start < ms);
 }
 
-// generate time_t
-time_t generateTime_t() {
+// generate time
+static time_t generateTimeByRTC() {
+  // returns time_t from rtc date and time
+  tmElements_t tm;
+  tm.Second = rtc.now().second();
+  tm.Minute = rtc.now().minute();
+  tm.Hour = rtc.now().hour();
+  tm.Day = rtc.now().day();
+  tm.Month = rtc.now().month();
+  tm.Year = rtc.now().year() - 1970;
+  time_t time = makeTime(tm);
+  return time;
+}
+
+static time_t generateTimeByGPS() {
   // returns time_t from gps date and time
   tmElements_t tm;
   tm.Second = gps.time.second();
@@ -187,12 +203,13 @@ void refreshMatrix () {
 
   matrix.fillScreen(0);
 
-  if (!newYear) {
-    timeToMatrix(rtc.now().hour(), rtc.now().minute());
-  } else {
+  if (newYear) {
     newYearSpecial(rtc.now().second());
+    matrix.show();
+    return;
   }
-
+  
+  timeToMatrix(rtc.now().hour(), rtc.now().minute());
   matrix.show();
 }
 
@@ -246,7 +263,6 @@ void displayinfoRTC () {
   if (rtc.now().second() < 10) Serial.print("0");
   Serial.print(rtc.now().second());
   Serial.println();
-
 }
 
 // display details of gps signal
@@ -275,7 +291,6 @@ void displayinfoGPS () {
   if (gps.time.second() < 10) Serial.print("0");
   Serial.print(gps.time.second());
   Serial.println();
-
 }
 
 // display details of gps signal
@@ -304,7 +319,6 @@ void displayinfoSYS () {
   if (second() < 10) Serial.print("0");
   Serial.print(second());
   Serial.println();
-
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -596,7 +610,7 @@ void seven (bool n, bool e) {
   // siebn/e/sieben
   switch (lang) {
     case 0:
-      Serial.print("siebn");
+      Serial.print("sieb");
       turnPixelsOn(0, 3, 6);
       if (n) {
         Serial.print("n");

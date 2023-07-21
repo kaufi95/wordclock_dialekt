@@ -1,7 +1,7 @@
 #include <EEPROM.h>
 
 const int eeC = 0;                    // eeprom address for colorstate
-const int eeL = 1;                    // eeprom address for lang
+const int eeL = 0;                    // eeprom address for lang
 
 void setup() {
   Serial.begin(9600);
