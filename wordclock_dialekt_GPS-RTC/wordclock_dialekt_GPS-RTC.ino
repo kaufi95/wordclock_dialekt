@@ -20,6 +20,7 @@ const int eeC = 0;                 // eeprom address for colorstate
 const int eeL = 1;                 // eeprom address for lang
 byte activeColorID;                // current active color mode
 byte lang;                         // active language
+const byte brightness = 200;       // brightness of the matrixleds
 unsigned long debounceDelay = 250; // the debounce time for button
 
 // define parameters
@@ -88,7 +89,7 @@ void setup()
   // init LED matrix
   Serial.println("initiating matrix");
   matrix.begin();
-  matrix.setBrightness(100);
+  matrix.setBrightness(brightness);
   matrix.fillScreen(0);
   matrix.show();
 
