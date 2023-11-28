@@ -134,13 +134,10 @@ void loop()
 
 void syncTime()
 {
-
-  rtc.adjust(AT.toLocal(generateTimeByRTC()));
-
   // get time from GPS module
   if (gps.time.isValid() && gps.date.isValid() && gps.date.year() >= 2021)
   {
-    if (initialSync || rtc.now().hour() == 2 && gps.time.second() != rtc.now().second())
+    if (initialSync || gps.time.second() != rtc.now().second())
     {
       Serial.println("setting rtctime...");
       rtc.adjust(AT.toLocal(generateTimeByGPS()));
