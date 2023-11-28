@@ -123,9 +123,9 @@ void loop()
 {
   refreshMatrix();
   smartDelay(1000);
-  displayinfoRTC();
-  displayinfoGPS();
-  displayinfoSYS();
+  displayTimeInfo(generateTimeByRTC(), "RTC");
+  displayTimeInfo(generateTimeByGPS(), "GPS");
+  displayTimeInfo(AT.toLocal(generateTimeByRTC()), "AT ");
   syncTime();
 }
 
@@ -239,105 +239,37 @@ void printEEPROM()
 
 // ----------------------------------------------------------------------------------------------------
 
-// display details of rtc
-void displayinfoRTC()
-{
-
-  Serial.print("RTC: ");
-
-  // print date
-  if (rtc.now().day() < 10)
-    Serial.print("0");
-  Serial.print(rtc.now().day());
-  Serial.print(F("/"));
-  if (rtc.now().month() < 10)
-    Serial.print("0");
-  Serial.print(rtc.now().month());
-  Serial.print("/");
-  Serial.print(rtc.now().year());
-
-  Serial.print(" / ");
-
-  // print time
-  if (rtc.now().hour() < 10)
-    Serial.print("0");
-  Serial.print(rtc.now().hour());
-  Serial.print(":");
-  if (rtc.now().minute() < 10)
-    Serial.print("0");
-  Serial.print(rtc.now().minute());
-  Serial.print(":");
-  if (rtc.now().second() < 10)
-    Serial.print("0");
-  Serial.print(rtc.now().second());
-  Serial.println();
-}
-
 // display details of gps signal
-void displayinfoGPS()
+void displayTimeInfo(time_t t, String component)
 {
 
-  Serial.print("GPS: ");
+  Serial.print(component + ": ");
 
   // print date
-  if (gps.date.day() < 10)
+  if (day(t) < 10)
     Serial.print("0");
-  Serial.print(gps.date.day());
+  Serial.print(day(t));
   Serial.print(F("/"));
-  if (gps.date.month() < 10)
+  if (month(t) < 10)
     Serial.print("0");
-  Serial.print(gps.date.month());
+  Serial.print(month(t));
   Serial.print("/");
-  Serial.print(gps.date.year());
+  Serial.print(year(t));
 
   Serial.print(" / ");
 
   // print time
-  if (gps.time.hour() < 10)
+  if (hour(t) < 10)
     Serial.print("0");
-  Serial.print(gps.time.hour());
+  Serial.print(hour(t));
   Serial.print(":");
-  if (gps.time.minute() < 10)
+  if (minute(t) < 10)
     Serial.print("0");
-  Serial.print(gps.time.minute());
+  Serial.print(minute(t));
   Serial.print(":");
-  if (gps.time.second() < 10)
+  if (second(t) < 10)
     Serial.print("0");
-  Serial.print(gps.time.second());
-  Serial.println();
-}
-
-// display details of gps signal
-void displayinfoSYS()
-{
-
-  Serial.print("SYS: ");
-
-  // print date
-  if (day() < 10)
-    Serial.print("0");
-  Serial.print(day());
-  Serial.print(F("/"));
-  if (month() < 10)
-    Serial.print("0");
-  Serial.print(month());
-  Serial.print("/");
-  Serial.print(year());
-
-  Serial.print(" / ");
-
-  // print time
-  if (hour() < 10)
-    Serial.print("0");
-  Serial.print(hour());
-  Serial.print(":");
-  if (minute() < 10)
-    Serial.print("0");
-  Serial.print(minute());
-  Serial.print(":");
-  if (second() < 10)
-    Serial.print("0");
-  Serial.print(second());
+  Serial.print(second(t));
   Serial.println();
 }
 
