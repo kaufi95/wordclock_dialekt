@@ -207,7 +207,7 @@ void refreshMatrix()
 {
   matrix.fillScreen(0);
   time_t convertedTime = AT.toLocal(generateTimeByRTC());
-  timeToMatrix(hour(convertedTime), minute(convertedTime));
+  timeToMatrix(convertedTime);
   matrix.show();
 }
 
@@ -344,8 +344,10 @@ void displayinfoSYS()
 // ----------------------------------------------------------------------------------------------------
 
 // converts time into matrix
-void timeToMatrix(uint8_t hours, uint8_t minutes)
+void timeToMatrix(time_t time)
 {
+  uint8_t hours = hour(time);
+  uint8_t minutes = minute(time);
 
   Serial.println("timeToMatrix");
   // Es isch/ist
