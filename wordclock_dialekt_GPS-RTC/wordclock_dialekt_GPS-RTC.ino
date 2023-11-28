@@ -81,8 +81,7 @@ void setup()
 
   if (rtc.lostPower())
   {
-    // this will adjust to the date and time at compilation
-    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // this will adjust to the date and time of compilation if rtc lost power
     rtc.adjust(DateTime(2021, 1, 1, 0, 0, 0));
   }
 
@@ -122,7 +121,6 @@ void setup()
 
 void loop()
 {
-  // checkColorButton();
   refreshMatrix();
   smartDelay(1000);
   displayinfoRTC();
@@ -136,10 +134,10 @@ void syncTime()
   // get time from GPS module
   if (gps.time.isValid() && gps.date.isValid() && gps.date.year() >= 2021)
   {
-    if (initialSync || gps.time.second() != rtc.now().second())
+    if (initialSync || gps.time.minute() != rtc.now().minute() || gps.time.second() != rtc.now().second())
     {
       Serial.println("setting rtctime...");
-      rtc.adjust(AT.toLocal(generateTimeByGPS()));
+      rtc.adjust(generateTimeByGPS());
       if (initialSync)
       {
         Serial.println("initialSync");
@@ -208,7 +206,8 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 void refreshMatrix()
 {
   matrix.fillScreen(0);
-  timeToMatrix(rtc.now().hour(), rtc.now().minute());
+  time_t convertedTime = AT.toLocal(generateTimeByRTC());
+  timeToMatrix(hour(convertedTime), minute(convertedTime));
   matrix.show();
 }
 
