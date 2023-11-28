@@ -199,12 +199,12 @@ static time_t generateTimeByGPS()
   return time;
 }
 
-// turns the pixels from a to b of a row on
-void turnPixelsOn(uint16_t a, uint16_t b, uint16_t c)
+// turns the pixels from startIndex to endIndex of startIndex row on
+void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 {
-  for (int i = a; i <= b; i++)
+  for (int i = startIndex; i <= endIndex; i++)
   {
-    matrix.drawPixel(i, c, colors[activeColorID]);
+    matrix.drawPixel(i, row, colors[activeColorID]);
   }
 }
 
