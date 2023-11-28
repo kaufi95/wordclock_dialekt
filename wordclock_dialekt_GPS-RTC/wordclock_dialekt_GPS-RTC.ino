@@ -7,7 +7,6 @@
 #include <Adafruit_NeoMatrix.h>
 
 // define setup
-bool testMode = false;
 const byte color = 0;
 const byte language = 0;
 
@@ -208,17 +207,7 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 // clears matrix, generates matrix and fills matrix
 void refreshMatrix()
 {
-  bool newYear = testMode || (gps.date.day() == 31 && gps.date.month() == 12 && gps.time.hour() == 23 && gps.time.minute() == 59 && gps.time.second() >= 30);
-
   matrix.fillScreen(0);
-
-  if (newYear)
-  {
-    newYearSpecial(rtc.now().second());
-    matrix.show();
-    return;
-  }
-
   timeToMatrix(rtc.now().hour(), rtc.now().minute());
   matrix.show();
 }
@@ -920,126 +909,6 @@ void uhr()
   case 1:
     Serial.print(" uhr");
     turnPixelsOn(8, 10, 9);
-    break;
-  }
-}
-
-// ----------------------------------------------------------------------------------------------------
-
-// newYearSpecial
-void newYearSpecial(uint8_t seconds)
-{
-  switch (seconds)
-  {
-  case 30:
-    matrix.fillScreen(0);
-    break;
-  case 34:
-    matrix.fillScreen(colors[activeColorID]);
-    break;
-  case 35:
-    matrix.fillScreen(0);
-    break;
-  case 36:
-    matrix.fillScreen(colors[activeColorID]);
-    break;
-  case 37:
-    matrix.fillScreen(0);
-    break;
-  case 38:
-    matrix.fillScreen(colors[activeColorID]);
-    break;
-  case 39:
-    matrix.fillScreen(0);
-    break;
-  case 40:
-    matrix.fillScreen(0);
-    twenty();
-    break;
-  case 41:
-    matrix.fillScreen(0);
-    nine(false);
-    ten(false, false);
-    break;
-  case 42:
-    matrix.fillScreen(0);
-    eight(false);
-    ten(false, false);
-    break;
-  case 43:
-    matrix.fillScreen(0);
-    seven(false, false);
-    ten(false, false);
-    break;
-  case 44:
-    matrix.fillScreen(0);
-    six(false);
-    ten(false, false);
-    break;
-  case 45:
-    matrix.fillScreen(0);
-    five(false, false);
-    ten(false, false);
-    break;
-  case 46:
-    matrix.fillScreen(0);
-    four(false);
-    ten(false, false);
-    break;
-  case 47:
-    matrix.fillScreen(0);
-    three();
-    ten(false, false);
-    break;
-  case 48:
-    matrix.fillScreen(0);
-    twelve(false);
-    break;
-  case 49:
-    matrix.fillScreen(0);
-    eleven(false);
-    break;
-  case 50:
-    matrix.fillScreen(0);
-    ten(false, false);
-    break;
-  case 51:
-    matrix.fillScreen(0);
-    nine(false);
-    break;
-  case 52:
-    matrix.fillScreen(0);
-    eight(false);
-    break;
-  case 53:
-    matrix.fillScreen(0);
-    seven(true, false);
-    break;
-  case 54:
-    matrix.fillScreen(0);
-    six(false);
-    break;
-  case 55:
-    matrix.fillScreen(0);
-    five(false, false);
-    break;
-  case 56:
-    matrix.fillScreen(0);
-    four(false);
-    break;
-  case 57:
-    matrix.fillScreen(0);
-    three();
-    break;
-  case 58:
-    matrix.fillScreen(0);
-    two();
-    break;
-  case 59:
-    matrix.fillScreen(0);
-    one(true);
-    break;
-  default:
     break;
   }
 }
