@@ -36,19 +36,12 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix (width, height, NEOPIXEL_PIN,
 // define color modes
 const uint16_t colors[] = {
   matrix.Color(255, 255, 255),  // white
-  matrix.Color(128, 128, 128),  // darker white
   matrix.Color(255, 0, 0),      // red
-  matrix.Color(128, 0, 0),      // darker red
   matrix.Color(0, 255, 0),      // green
-  matrix.Color(0, 128, 0),      // darker green
   matrix.Color(0, 0, 255),      // blue
-  matrix.Color(0, 0, 128),      // darker blue
   matrix.Color(0, 255, 255),    // cyan
-  matrix.Color(0, 128, 128),    // darker cyan
   matrix.Color(255, 0, 200),    // magenta
-  matrix.Color(128, 0, 100),    // darker magenta
   matrix.Color(255, 255, 0),    // yellow
-  matrix.Color(128, 128, 0),    // darker yellow
 };
 
 // create GPS object
