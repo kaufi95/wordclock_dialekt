@@ -292,8 +292,8 @@ void timeToMatrix(time_t time)
   Serial.println("timeToMatrix");
 
   // show "Es ist" or "Es isch" randomized
-  bool randomized = (random() / 2) % 2 == 0;
-  Serial.println("random: " + String(randomized));
+  bool randomized = random() % 2 == 0;
+  Serial.println("randomized: " + String(randomized));
   if (randomized)
   {
     // Es isch/ist
