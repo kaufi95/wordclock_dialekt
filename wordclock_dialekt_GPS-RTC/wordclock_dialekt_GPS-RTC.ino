@@ -123,7 +123,7 @@ void setup()
 
 void loop()
 {
-  refreshMatrix();
+  refreshMatrix(false);
   smartDelay(1000);
   displayTimeInfo(generateTimeByRTC(), "RTC");
   displayTimeInfo(generateTimeByGPS(), "GPS");
@@ -205,18 +205,17 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 }
 
 // clears matrix, generates matrix and fills matrix
-void refreshMatrix()
+void refreshMatrix(bool settingsChanged)
 {
   time_t convertedTime = AT.toLocal(generateTimeByRTC());
-  if (lastMin == minute(convertedTime))
+  if (lastMin != minute(convertedTime) || settingsChanged)
   {
-    return;
+    Serial.println("refreshing matrix");
+    matrix.fillScreen(0);
+    timeToMatrix(convertedTime);
+    matrix.show();
+    lastMin = minute(convertedTime);
   }
-  Serial.println("refreshing matrix");
-  matrix.fillScreen(0);
-  timeToMatrix(convertedTime);
-  matrix.show();
-  lastMin = minute(convertedTime);
 }
 
 // checks if colorbutton is pressed and write new value to eeprom
@@ -230,6 +229,7 @@ void checkColorButton()
     Serial.println("writing color to eeprom");
     EEPROM.write(eeC, activeColorID);
     printEEPROM();
+    refreshMatrix(true);
   }
 }
 
