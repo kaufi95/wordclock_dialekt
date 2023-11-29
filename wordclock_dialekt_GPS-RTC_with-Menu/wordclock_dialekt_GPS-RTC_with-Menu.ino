@@ -21,6 +21,7 @@ const int eeL = 2;            // eeprom address for language (0: DIA, 1: HD)
 byte currentMenu = 0;         // current menu (0: color, 1: brightness, 2: language)
 byte settings[3] = {0, 0, 0}; // settings array (color, brightness, language)
 int longPressTime = 100;      // longpresstime for button
+byte lastMin;                 // last minute
 
 // define parameters
 const int width = 11;  // width of LED matirx
@@ -249,12 +250,17 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 // clears matrix, calculates matrix and fills it
 void refreshMatrix()
 {
+  time_t convertedTime = AT.toLocal(generateTimeByRTC());
+  if (lastMin == minute(convertedTime))
+  {
+    return;
+  }
   matrix.fillScreen(0);
   byte brightness = 64 + settings[1] * 16;
   matrix.setBrightness(brightness);
-  time_t convertedTime = AT.toLocal(generateTimeByRTC());
   timeToMatrix(convertedTime);
   matrix.show();
+  lastMin = minute(convertedTime);
 }
 
 // // writes values to eeprom
@@ -406,22 +412,28 @@ void timeToMatrix(time_t time)
   uint8_t minutes = minute(time);
 
   Serial.println("timeToMatrix");
-  // Es isch/ist
-  switch (settings[2])
-  {
-  case 0:
-    Serial.print("Es isch");
-    turnPixelsOn(1, 2, 0);
-    turnPixelsOn(5, 8, 0);
-    break;
-  case 1:
-    Serial.print("Es ist");
-    turnPixelsOn(1, 2, 0);
-    turnPixelsOn(5, 7, 0);
-    break;
-  }
 
-  Serial.print(" ");
+  // show "Es ist" or "Es isch" randomized
+  long randomNum = random(0, 2);
+  Serial.println("randomNum: " + String(randomNum));
+  if (randomNum == 0)
+  {
+    // Es isch/ist
+    switch (settings[2])
+    {
+    case 0:
+      Serial.print("Es isch");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 8, 0);
+      break;
+    case 1:
+      Serial.print("Es ist");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 7, 0);
+      break;
+    }
+    Serial.print(" ");
+  }
 
   // show minutes
   if (minutes >= 0 && minutes < 5)

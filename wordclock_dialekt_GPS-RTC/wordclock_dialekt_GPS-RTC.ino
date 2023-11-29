@@ -22,6 +22,7 @@ byte activeColorID;                // current active color mode
 byte lang;                         // active language
 const byte brightness = 127;       // brightness of the matrixleds
 unsigned long debounceDelay = 250; // the debounce time for button
+byte lastMin;                      // last minute
 
 // define parameters
 const int width = 11;  // width of LED matirx
@@ -206,10 +207,16 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 // clears matrix, generates matrix and fills matrix
 void refreshMatrix()
 {
-  matrix.fillScreen(0);
   time_t convertedTime = AT.toLocal(generateTimeByRTC());
+  if (lastMin == minute(convertedTime))
+  {
+    return;
+  }
+  Serial.println("refreshing matrix");
+  matrix.fillScreen(0);
   timeToMatrix(convertedTime);
   matrix.show();
+  lastMin = minute(convertedTime);
 }
 
 // checks if colorbutton is pressed and write new value to eeprom
@@ -283,22 +290,28 @@ void timeToMatrix(time_t time)
   uint8_t minutes = minute(time);
 
   Serial.println("timeToMatrix");
-  // Es isch/ist
-  switch (lang)
-  {
-  case 0:
-    Serial.print("Es isch");
-    turnPixelsOn(1, 2, 0);
-    turnPixelsOn(5, 8, 0);
-    break;
-  case 1:
-    Serial.print("Es ist");
-    turnPixelsOn(1, 2, 0);
-    turnPixelsOn(5, 7, 0);
-    break;
-  }
 
-  Serial.print(" ");
+  // show "Es ist" or "Es isch" randomized
+  long randomNum = random(0, 2);
+  Serial.println("randomNum: " + String(randomNum));
+  if (randomNum == 0)
+  {
+    // Es isch/ist
+    switch (lang)
+    {
+    case 0:
+      Serial.print("Es isch");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 8, 0);
+      break;
+    case 1:
+      Serial.print("Es ist");
+      turnPixelsOn(1, 2, 0);
+      turnPixelsOn(5, 7, 0);
+      break;
+    }
+    Serial.print(" ");
+  }
 
   // show minutes
   if (minutes >= 0 && minutes < 5)
