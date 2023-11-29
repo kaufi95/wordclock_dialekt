@@ -90,9 +90,9 @@ void setup()
   matrix.fillScreen(0);
   matrix.show();
 
-  // // define color button as input
-  // Serial.println("changing pinMode");
-  // pinMode(BUTTON_PIN, INPUT_PULLUP);
+  // define color button as input
+  Serial.println("changing pinMode");
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   // sync on first valid gps signal
   initialSync = true;
@@ -105,8 +105,8 @@ void setup()
 
     // Initialize the button.
     button.begin(BUTTON_PIN);
-    button.setDebounceTime(150);
-    button.setLongClickTime(3000);
+    button.setDebounceTime(100);
+    button.setLongClickTime(1500);
     button.setClickHandler(handler);
     button.setLongClickHandler(handler);
   }
@@ -120,43 +120,12 @@ void setup()
   printEEPROM();
 }
 
-void handler(Button2 &btn)
-{
-  switch (btn.getType())
-  {
-  case long_click:
-    currentMenu = (currentMenu + 1) % 4;
-    Serial.println("current menu: " + String(currentMenu));
-    break;
-  case single_click:
-    switch (currentMenu)
-    {
-    case 0:
-      settings[currentMenu] = (settings[currentMenu] + 1) % 7;
-      Serial.println("color: " + String(settings[currentMenu]));
-      EEPROM.write(eeC, settings[0]);
-      break;
-    case 1:
-      settings[currentMenu] = (settings[currentMenu] + 1) % 4;
-      Serial.println("brightness: " + String(settings[currentMenu]));
-      EEPROM.write(eeB, settings[1]);
-      break;
-    case 2:
-      settings[currentMenu] = (settings[currentMenu] + 1) % 2;
-      Serial.println("language: " + String(settings[currentMenu]));
-      EEPROM.write(eeL, settings[2]);
-      break;
-    }
-    break;
-  }
-}
-
 void loop()
 {
   if (menuSwitch)
   {
     button.loop();
-    showMenu();
+    showMenuOnMatrix();
     return;
   }
 
@@ -170,15 +139,41 @@ void loop()
 
 // ----------------------------------------------------------------------------------------------------
 
-void showMenu()
+// handles button events
+void handler(Button2 &btn)
 {
-  // show current values on matrix
-  matrix.fillScreen(0);
-  turnPixelsOn(0, settings[currentMenu], 0);
-  turnPixelsOn(0, currentMenu, 10);
-  matrix.show();
+  switch (btn.getType())
+  {
+  case long_click:
+    currentMenu = (currentMenu + 1) % 4;
+  case single_click:
+    switch (currentMenu)
+    {
+    case 0:
+      settings[currentMenu] = (settings[currentMenu] + 1) % 7;
+      EEPROM.write(eeC, settings[0]);
+      break;
+    case 1:
+      settings[currentMenu] = (settings[currentMenu] + 1) % 4;
+      EEPROM.write(eeB, settings[1]);
+      break;
+    case 2:
+      settings[currentMenu] = (settings[currentMenu] + 1) % 2;
+      EEPROM.write(eeL, settings[2]);
+      break;
+    case 3:
+      Serial.println("exiting menu...");
+      menuSwitch = false;
+      //   writeValuesToEEPROM();
+      break;
+    }
+  }
+  printMenu();
 }
 
+// ----------------------------------------------------------------------------------------------------
+
+// syncronizes time with gps module
 void syncTime()
 {
   // get time from GPS module
@@ -213,7 +208,7 @@ static void smartDelay(unsigned long ms)
   } while (millis() - start < ms);
 }
 
-// generate time
+// generates time object
 static time_t generateTimeByRTC()
 {
   // returns time_t from rtc date and time
@@ -242,7 +237,7 @@ static time_t generateTimeByGPS()
   return time;
 }
 
-// turns the pixels from startIndex to endIndex of startIndex row on
+// turns the pixels from startIndex to endIndex of a specific row on
 void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 {
   for (int i = startIndex; i <= endIndex; i++)
@@ -251,17 +246,30 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
   }
 }
 
-// clears matrix, generates matrix and fills matrix
+// clears matrix, calculates matrix and fills it
 void refreshMatrix()
 {
   matrix.fillScreen(0);
-  byte brightness = 55 + settings[1] * 50;
+  byte brightness = 64 + settings[1] * 16;
   matrix.setBrightness(brightness);
   time_t convertedTime = AT.toLocal(generateTimeByRTC());
   timeToMatrix(convertedTime);
   matrix.show();
 }
 
+// // writes values to eeprom
+// void writeValuesToEEPROM()
+// {
+//   Serial.println("writing values to eeprom");
+//   for (int i = 0; i < 3; i++)
+//   {
+//     EEPROM.write(i, settings[i]);
+//   }
+// }
+
+// ----------------------------------------------------------------------------------------------------
+
+// print the eeeprom values
 void printEEPROM()
 {
   Serial.println("reading eeprom");
@@ -274,7 +282,86 @@ void printEEPROM()
   }
 }
 
-// ----------------------------------------------------------------------------------------------------
+// outputs settings on matrix
+void showMenuOnMatrix()
+{
+  matrix.fillScreen(0);
+  turnPixelsOn(0, settings[currentMenu], 0);
+  turnPixelsOn(0, currentMenu, 10);
+  matrix.show();
+}
+
+// prints the current menu
+void printMenu()
+{
+  Serial.println("current menu: ");
+  switch (currentMenu)
+  {
+  case 0:
+    Serial.println("color");
+    Serial.print("current value:");
+    switch (settings[currentMenu])
+    {
+    case 0:
+      Serial.println("white");
+      break;
+    case 1:
+      Serial.println("red");
+      break;
+    case 2:
+      Serial.println("green");
+      break;
+    case 3:
+      Serial.println("blue");
+      break;
+    case 4:
+      Serial.println("cyan");
+      break;
+    case 5:
+      Serial.println("magenta");
+      break;
+    case 6:
+      Serial.println("yellow");
+      break;
+    }
+    break;
+  case 1:
+    Serial.println("brightness");
+    Serial.print("current value:");
+    switch (settings[currentMenu])
+    {
+    case 0:
+      Serial.println("low");
+      break;
+    case 1:
+      Serial.println("medium");
+      break;
+    case 2:
+      Serial.println("high");
+      break;
+    case 3:
+      Serial.println("very high");
+      break;
+    }
+    break;
+  case 2:
+    Serial.println("language");
+    Serial.print("current value:");
+    switch (settings[currentMenu])
+    {
+    case 0:
+      Serial.println("DIA");
+      break;
+    case 1:
+      Serial.println("HD");
+      break;
+    }
+    break;
+  case 3:
+    Serial.println("exit...");
+    break;
+  }
+}
 
 // display details of gps signal
 void displayTimeInfo(time_t t, String component)
