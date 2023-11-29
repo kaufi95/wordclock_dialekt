@@ -1,5 +1,3 @@
-// TODO: find and fix error: clock works only when connected to pc
-
 #include <EEPROM.h>
 #include <RTClib.h>
 #include <TimeLib.h>
@@ -147,6 +145,7 @@ void handler(Button2 &btn)
   {
   case long_click:
     currentMenu = (currentMenu + 1) % 4;
+    break;
   case single_click:
     switch (currentMenu)
     {
@@ -165,7 +164,6 @@ void handler(Button2 &btn)
     case 3:
       Serial.println("exiting menu...");
       menuSwitch = false;
-      //   writeValuesToEEPROM();
       break;
     }
   }
@@ -263,16 +261,6 @@ void refreshMatrix()
   lastMin = minute(convertedTime);
 }
 
-// // writes values to eeprom
-// void writeValuesToEEPROM()
-// {
-//   Serial.println("writing values to eeprom");
-//   for (int i = 0; i < 3; i++)
-//   {
-//     EEPROM.write(i, settings[i]);
-//   }
-// }
-
 // ----------------------------------------------------------------------------------------------------
 
 // print the eeeprom values
@@ -300,12 +288,12 @@ void showMenuOnMatrix()
 // prints the current menu
 void printMenu()
 {
-  Serial.println("current menu: ");
+  Serial.print("current menu: ");
   switch (currentMenu)
   {
   case 0:
     Serial.println("color");
-    Serial.print("current value:");
+    Serial.print("current value: ");
     switch (settings[currentMenu])
     {
     case 0:
@@ -333,7 +321,7 @@ void printMenu()
     break;
   case 1:
     Serial.println("brightness");
-    Serial.print("current value:");
+    Serial.print("current value: ");
     switch (settings[currentMenu])
     {
     case 0:
@@ -352,7 +340,7 @@ void printMenu()
     break;
   case 2:
     Serial.println("language");
-    Serial.print("current value:");
+    Serial.print("current value: ");
     switch (settings[currentMenu])
     {
     case 0:
