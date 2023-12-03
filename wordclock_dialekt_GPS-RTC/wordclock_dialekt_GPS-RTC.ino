@@ -1,12 +1,12 @@
 #include <EEPROM.h>
 #include <RTClib.h>
+#include <Button2.h>
 #include <TimeLib.h>
 #include <Timezone.h>
-#include <ezButton.h>
 #include <TinyGPS++.h>
 #include <Adafruit_NeoMatrix.h>
 
-// define setup
+// define variables to flash eeprom
 const byte color = 0;
 const byte language = 0;
 
@@ -18,7 +18,7 @@ const byte language = 0;
 bool initialSync;
 const int eeC = 0;                 // eeprom address for colorstate
 const int eeL = 1;                 // eeprom address for lang
-byte activeColorID;                // current active color mode
+byte colorID;                      // current color mode
 byte lang;                         // active language
 const byte brightness = 127;       // brightness of the matrixleds
 unsigned long debounceDelay = 250; // the debounce time for button
@@ -52,7 +52,7 @@ TinyGPSPlus gps;
 RTC_DS3231 rtc;
 
 // create button object
-ezButton button(COLOR_BUTTON_PIN); // create ezButton object that attach to led color button pin;
+Button2 button;
 
 // define time change rules and timezone
 TimeChangeRule atST = {"ST", Last, Sun, Mar, 2, 120}; // UTC + 2 hours
@@ -97,7 +97,6 @@ void setup()
   // define color button as input
   Serial.println("changing pinMode");
   pinMode(COLOR_BUTTON_PIN, INPUT_PULLUP);
-  button.setDebounceTime(debounceDelay);
 
   // sync on first valid gps signal
   initialSync = true;
@@ -113,10 +112,15 @@ void setup()
     EEPROM.write(eeL, language);
   }
 
+  // Initialize the button.
+  button.begin(COLOR_BUTTON_PIN);
+  button.setDebounceTime(100);
+  button.setTapHandler(tapHandler);
+
   // read color and lang
   Serial.println("reading eeprom @ setup");
-  activeColorID = EEPROM.read(eeC); // current active color mode
-  lang = EEPROM.read(eeL);          // switch languages (0: dialekt, 1: deutsch, 2: ...)
+  colorID = EEPROM.read(eeC); // current color mode
+  lang = EEPROM.read(eeL);    // switch languages (0: dialekt, 1: deutsch, 2: ...)
 
   printEEPROM();
 }
@@ -158,7 +162,7 @@ static void smartDelay(unsigned long ms)
   unsigned long start = millis();
   do
   {
-    checkColorButton();
+    button.loop();
     while (Serial1.available())
     {
       gps.encode(Serial1.read());
@@ -200,7 +204,7 @@ void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row)
 {
   for (int i = startIndex; i <= endIndex; i++)
   {
-    matrix.drawPixel(i, row, colors[activeColorID]);
+    matrix.drawPixel(i, row, colors[colorID]);
   }
 }
 
@@ -219,18 +223,14 @@ void refreshMatrix(bool settingsChanged)
 }
 
 // checks if colorbutton is pressed and write new value to eeprom
-void checkColorButton()
-{
-  button.loop(); // MUST call the loop() function first
-  if (button.isPressed())
+void tapHandler(Button2 &btn)
   {
     Serial.println("changing color");
-    activeColorID = (activeColorID + 1) % (sizeof(colors) / sizeof(colors[0]));
+  colorID = (colorID + 1) % (sizeof(colors) / sizeof(colors[0]));
     Serial.println("writing color to eeprom");
-    EEPROM.write(eeC, activeColorID);
+  EEPROM.write(eeC, colorID);
     printEEPROM();
     refreshMatrix(true);
-  }
 }
 
 void printEEPROM()
@@ -469,7 +469,7 @@ void timeToMatrix(time_t time)
   // pixels for minutes in additional row
   for (byte i = 1; i <= minutes % 5; i++)
   {
-    matrix.drawPixel(i - 1, 10, colors[activeColorID]);
+    matrix.drawPixel(i - 1, 10, colors[colorID]);
   }
 
   Serial.print(" + ");
