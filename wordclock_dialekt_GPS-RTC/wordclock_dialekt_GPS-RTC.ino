@@ -140,20 +140,20 @@ void syncTime()
   // get time from GPS module
   if (gps.time.isValid() && gps.date.isValid() && gps.date.year() >= 2021)
   {
-    if (initialSync || gps.time.minute() != rtc.now().minute() || gps.time.second() != rtc.now().second())
+    if (initialSync || gps.time.minute() != rtc.now().minute() || abs(gps.time.second() - rtc.now().second()) > 5)
     {
       Serial.println("setting rtctime...");
       rtc.adjust(generateTimeByGPS());
       if (initialSync)
       {
-        Serial.println("initialSync");
+        Serial.println("initial sync");
         initialSync = false;
       }
     }
   }
   else
   {
-    Serial.println("gps signal invalid! (time or date)");
+    Serial.println("gps signal not ready or invalid!");
   }
 }
 
@@ -224,13 +224,13 @@ void refreshMatrix(bool settingsChanged)
 
 // checks if colorbutton is pressed and write new value to eeprom
 void tapHandler(Button2 &btn)
-  {
-    Serial.println("changing color");
+{
+  Serial.println("changing color");
   colorID = (colorID + 1) % (sizeof(colors) / sizeof(colors[0]));
-    Serial.println("writing color to eeprom");
+  Serial.println("writing color to eeprom");
   EEPROM.write(eeC, colorID);
-    printEEPROM();
-    refreshMatrix(true);
+  printEEPROM();
+  refreshMatrix(true);
 }
 
 void printEEPROM()
