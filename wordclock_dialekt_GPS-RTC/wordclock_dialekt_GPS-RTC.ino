@@ -283,6 +283,19 @@ void displayTimeInfo(time_t t, String component)
 
 // ----------------------------------------------------------------------------------------------------
 
+// determine if "es isch/es ist" is shown
+bool showEsIst(uint8_t minutes)
+{
+  // show "Es ist" or "Es isch" randomized
+  bool randomized = random() % 2 == 0;
+  Serial.println("randomized 'es isch': " + String(randomized));
+
+  bool showEsIst = randomized || minutes % 30 < 5;
+  Serial.println("show 'es isch': " + String(showEsIst));
+
+  return showEsIst;
+}
+
 // converts time into matrix
 void timeToMatrix(time_t time)
 {
@@ -292,9 +305,7 @@ void timeToMatrix(time_t time)
   Serial.println("timeToMatrix");
 
   // show "Es ist" or "Es isch" randomized
-  bool randomized = random() % 2 == 0;
-  Serial.println("randomized: " + String(randomized));
-  if (randomized)
+  if (showEsIst(minutes))
   {
     // Es isch/ist
     switch (lang)
