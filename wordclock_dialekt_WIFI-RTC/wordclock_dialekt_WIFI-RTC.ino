@@ -25,10 +25,10 @@
 #define HEIGHT 11  // height of LED matrix + additional row for minute leds
 
 // define global variables
-byte colorID;                 // current color mode
-byte lang;                    // active language
-byte brightness = 127;        // brightness of the matrixleds
-byte lastMin;                 // last minute
+byte color = 0;               // color
+byte language = 0;            // language (0: dialekt; 1: deutsch)
+byte brightness = 128;        // brightness
+byte lastMin = 0;             // last minute
 
 // create Adafruit_NeoMatrix object
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(WIDTH, HEIGHT, NEOPIXEL_PIN,
@@ -82,6 +82,7 @@ void setup() {
   // ser server handlers
   server.onNotFound(handleNotFound);
   server.on("/update", HTTP_POST, handleUpdate);
+  server.on("/portal", HTTP_GET, handleConnect);
   server.on("/", HTTP_GET, handleConnect);
 
   // serve static files
@@ -111,10 +112,10 @@ void setup() {
   // initialize EEPROM
   EEPROM.begin(EEPROM_SIZE);
 
-  // read color and lang
+  // read stored values from eeprom
   Serial.println("reading eeprom @ setup");
-  colorID = EEPROM.read(EEC);  // current color mode
-  lang = EEPROM.read(EEL);     // switch languages (0: dialekt, 1: deutsch, 2: ...)
+  color = EEPROM.read(EEC);         // stored color
+  language = EEPROM.read(EEL);      // stored language
 
   // init LED matrix
   Serial.println("initiating matrix");
@@ -142,7 +143,9 @@ void loop() {
 // webserver handlers
 
 void handleNotFound() {
-  server.send(404, "text/plain", "File Not Found");
+  // server.send(404, "text/plain", "File Not Found");
+  server.sendHeader("Location", "/index.html", true);
+  server.send(302, "text/plain", "");
 }
 
 void handleConnect() {
@@ -162,21 +165,23 @@ void handleUpdate() {
     return;
   }
 
-  time_t time = mapTime(doc["datetime"]);
+  time_t t = mapTime(doc["datetime"]);
   Serial.print("datetime: ");
-  Serial.println(time);
-  rtc.adjust(time);
+  Serial.println(t);
+  rtc.adjust(t);
 
-  byte color = mapper(doc["color"]);
+  byte c = mapper(doc["color"]);
   Serial.print("color: ");
-  Serial.println(color);
-  EEPROM.write(EEC, color);
-  colorID = color;
+  Serial.println(c);
+  EEPROM.write(EEC, c);
+  color = c;
 
-  byte language = mapper(doc["language"]);
+  byte l = mapper(doc["language"]);
   Serial.print("language: ");
-  Serial.println(language);
-  EEPROM.write(EEL, language);
+  Serial.println(l);
+  EEPROM.write(EEL, l);
+  language = l;
+
   EEPROM.commit();
   lang = language;
 
@@ -225,7 +230,7 @@ static time_t generateTimeByRTC() {
 // turns the pixels from startIndex to endIndex of startIndex row on
 void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row) {
   for (int i = startIndex; i <= endIndex; i++) {
-    matrix.drawPixel(i, row, colors[colorID]);
+    matrix.drawPixel(i, row, colors[color]);
   }
 }
 
@@ -311,7 +316,7 @@ void timeToMatrix(time_t time) {
   // show "Es ist" or "Es isch" randomized
   if (showEsIst(minutes)) {
     // Es isch/ist
-    switch (lang) {
+    switch (language) {
       case 0:
         Serial.print("Es isch");
         turnPixelsOn(1, 2, 0);
@@ -451,7 +456,7 @@ void timeToMatrix(time_t time) {
 
   // pixels for minutes in additional row
   for (byte i = 1; i <= minutes % 5; i++) {
-    matrix.drawPixel(i - 1, 10, colors[colorID]);
+    matrix.drawPixel(i - 1, 10, colors[color]);
   }
 
   Serial.print(" + ");
@@ -465,7 +470,7 @@ void timeToMatrix(time_t time) {
 
 void one(bool s) {
   // oans/eins
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("oans");
       turnPixelsOn(7, 10, 4);
@@ -484,7 +489,7 @@ void one(bool s) {
 
 void two() {
   // zwoa/zwei
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("zwoa");
       turnPixelsOn(5, 8, 4);
@@ -498,7 +503,7 @@ void two() {
 
 void three() {
   // drei
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("drei");
       turnPixelsOn(0, 3, 5);
@@ -512,7 +517,7 @@ void three() {
 
 void four(bool e) {
   // vier/e/vier
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("vier");
       turnPixelsOn(0, 3, 8);
@@ -531,7 +536,7 @@ void four(bool e) {
 void five(bool min, bool e) {
   // fünf/e/fünf
   if (min) {
-    switch (lang) {
+    switch (language) {
       case 0:
         Serial.print("fünf");
         turnPixelsOn(0, 3, 1);
@@ -542,7 +547,7 @@ void five(bool min, bool e) {
         break;
     }
   } else {
-    switch (lang) {
+    switch (language) {
       case 0:
         Serial.print("fünf");
         turnPixelsOn(0, 3, 7);
@@ -561,7 +566,7 @@ void five(bool min, bool e) {
 
 void six(bool e) {
   // sechs/e/sechs
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("sechs");
       turnPixelsOn(5, 9, 5);
@@ -579,7 +584,7 @@ void six(bool e) {
 
 void seven(bool n, bool e) {
   // siebn/e/sieben
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("sieb");
       turnPixelsOn(0, 3, 6);
@@ -601,7 +606,7 @@ void seven(bool n, bool e) {
 
 void eight(bool e) {
   // acht/e/acht
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("acht");
       turnPixelsOn(6, 9, 7);
@@ -619,7 +624,7 @@ void eight(bool e) {
 
 void nine(bool e) {
   // nün/e/neun
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("nün");
       turnPixelsOn(7, 9, 6);
@@ -638,7 +643,7 @@ void nine(bool e) {
 void ten(bool min, bool e) {
   // zehn/e/zehn
   if (min) {
-    switch (lang) {
+    switch (language) {
       case 0:
         Serial.print("zehn");
         turnPixelsOn(7, 10, 2);
@@ -649,7 +654,7 @@ void ten(bool min, bool e) {
         break;
     }
   } else {
-    switch (lang) {
+    switch (language) {
       case 0:
         Serial.print("zehn");
         turnPixelsOn(6, 9, 8);
@@ -668,7 +673,7 @@ void ten(bool min, bool e) {
 
 void eleven(bool e) {
   // elf/e
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("elf");
       turnPixelsOn(0, 2, 9);
@@ -687,7 +692,7 @@ void eleven(bool e) {
 void twelve(bool e) {
   // zwölf/e
   Serial.print("zwölf");
-  switch (lang) {
+  switch (language) {
     case 0:
       turnPixelsOn(5, 9, 9);
       if (e) {
@@ -704,7 +709,7 @@ void twelve(bool e) {
 void quarter() {
   // viertel
   Serial.print("viertel");
-  switch (lang) {
+  switch (language) {
     case 0:
       turnPixelsOn(0, 6, 2);
       break;
@@ -717,7 +722,7 @@ void quarter() {
 void twenty() {
   // zwanzig
   Serial.print("zwanzig");
-  switch (lang) {
+  switch (language) {
     case 0:
       turnPixelsOn(4, 10, 1);
       break;
@@ -732,7 +737,7 @@ void twenty() {
 void to() {
   // vor/vor
   turnPixelsOn(1, 3, 3);
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("vor");
       turnPixelsOn(1, 3, 3);
@@ -746,7 +751,7 @@ void to() {
 
 void after() {
   // noch/nach
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("noch");
       turnPixelsOn(5, 8, 3);
@@ -760,7 +765,7 @@ void after() {
 
 void half() {
   // halb
-  switch (lang) {
+  switch (language) {
     case 0:
       Serial.print("halb");
       turnPixelsOn(0, 3, 4);
@@ -774,7 +779,7 @@ void half() {
 
 void uhr() {
   // uhr
-  switch (lang) {
+  switch (language) {
     case 0:
       break;
     case 1:
