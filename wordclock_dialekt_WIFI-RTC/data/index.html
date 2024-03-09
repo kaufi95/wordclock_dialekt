@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WordClock Controller</title>
+    <style>
+      .color-box {
+        width: 50px;
+        height: 50px;
+        margin: 5px;
+        display: inline-block;
+        outline: 1px solid black;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <div id="datetime"></div>
+      <div id="color-box-container">
+        <div class="color-box" style="background-color: white"></div>
+        <div class="color-box" style="background-color: red"></div>
+        <div class="color-box" style="background-color: green"></div>
+        <div class="color-box" style="background-color: blue"></div>
+        <div class="color-box" style="background-color: cyan"></div>
+        <div class="color-box" style="background-color: magenta"></div>
+        <div class="color-box" style="background-color: yellow"></div>
+      </div>
+
+      <div id="language-container">
+        <input type="radio" id="dialekt" name="language" value="dialekt" />
+        <label for="dialekt">Dialekt</label>
+        <input type="radio" id="deutsch" name="language" value="deutsch" />
+        <label for="spanish">Deutsch</label>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
