@@ -12,10 +12,11 @@
         display: inline-block;
         outline: 1px solid black;
         cursor: pointer;
+        border-radius: 5px;
       }
     </style>
   </head>
-  <body>
+  <body style="background-color: azure">
     <div
       style="
         display: flex;
@@ -24,7 +25,8 @@
         align-items: center;
       "
     >
-      <div id="datetime"></div>
+      <h1>WordClock Controller</h1>
+      <p>Color:</p>
       <div id="color-box-container">
         <div class="color-box" style="background-color: white"></div>
         <div class="color-box" style="background-color: red"></div>
@@ -35,11 +37,24 @@
         <div class="color-box" style="background-color: yellow"></div>
       </div>
 
+      <p>Language:</p>
       <div id="language-container">
-        <input type="radio" id="dialekt" name="language" value="dialekt" />
-        <label for="dialekt">Dialekt</label>
-        <input type="radio" id="deutsch" name="language" value="deutsch" />
-        <label for="spanish">Deutsch</label>
+        <input type="radio" id="dia" name="language" value="dialekt" checked />
+        <label for="dia">Dialekt</label>
+        <input type="radio" id="de" name="language" value="deutsch" />
+        <label for="de">Deutsch</label>
+      </div>
+
+      <p>Brightness:</p>
+      <div id="brightness-container">
+        <input type="radio" id="b-low" name="brightness" value="1" />
+        <label for="b-low">Low</label>
+        <input type="radio" id="b-mid" name="brightness" value="2" checked />
+        <label for="b-mid">Middle</label>
+        <input type="radio" id="b-high" name="brightness" value="3" />
+        <label for="b-high">High</label>
+        <input type="radio" id="b-veryhigh" name="brightness" value="4" />
+        <label for="b-veryhigh">Very high</label>
       </div>
     </div>
 

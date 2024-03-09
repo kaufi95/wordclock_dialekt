@@ -10,9 +10,10 @@
 #include <ArduinoJson.h>
 
 // define constantcs for eeprom
-#define EEPROM_SIZE 2
+#define EEPROM_SIZE 3
 #define EEC 0
 #define EEL 1
+#define EEB 2
 
 // define WiFi settings
 #define SSID "WordClock"
@@ -116,6 +117,7 @@ void setup() {
   Serial.println("reading eeprom @ setup");
   color = EEPROM.read(EEC);         // stored color
   language = EEPROM.read(EEL);      // stored language
+  brightness = EEPROM.read(EEB);    // stored brightness
 
   // init LED matrix
   Serial.println("initiating matrix");
@@ -182,8 +184,13 @@ void handleUpdate() {
   EEPROM.write(EEL, l);
   language = l;
 
+  byte b = mapper(doc["brightness"]);
+  Serial.print("brightness: ");
+  Serial.println(b);
+  EEPROM.write(EEB, b);
+  brightness = b;
+
   EEPROM.commit();
-  lang = language;
 
   refreshMatrix(true);
   printEEPROM();
@@ -202,6 +209,10 @@ static byte mapper(const char* input) {
   if (key == "cyan") return 4;
   if (key == "magenta") return 5;
   if (key == "yellow") return 6;
+  if (key == "1") return 64;
+  if (key == "2") return 96;
+  if (key == "3") return 128;
+  if (key == "4") return 160;
   return 0;
 }
 
