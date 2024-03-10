@@ -32,6 +32,7 @@ The backplate of the clock is made of 10mm plywood. Groves are milled into the p
 
 TODO:
 
+- Shutdown the wifi after a specific time
 - Move languages to specific files
 - Add pictures
 - Add wiring diagram

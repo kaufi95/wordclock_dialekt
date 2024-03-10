@@ -18,6 +18,9 @@
 // define WiFi settings
 #define SSID "WordClock"
 
+// define ports
+#define HTTP_PORT 80
+
 // define pins
 #define NEOPIXEL_PIN 4  // define pin for Neopixels
 
@@ -51,7 +54,7 @@ const uint16_t colors[] = {
 RTC_DS3231 rtc;
 
 // create webserver
-WebServer server(80);
+WebServer server(HTTP_PORT);
 
 // define time change rules and timezone
 TimeChangeRule atST = { "ST", Last, Sun, Mar, 2, 120 };  // UTC + 2 hours
@@ -82,9 +85,8 @@ void setup() {
 
   // ser server handlers
   server.onNotFound(handleNotFound);
-  server.on("/update", HTTP_POST, handleUpdate);
-  server.on("/portal", HTTP_GET, handleConnect);
   server.on("/", HTTP_GET, handleConnect);
+  server.on("/update", HTTP_POST, handleUpdate);
 
   // serve static files
   server.serveStatic("/index.html", SPIFFS, "/index.html");
@@ -189,6 +191,7 @@ void handleUpdate() {
   Serial.println(b);
   EEPROM.write(EEB, b);
   brightness = b;
+  matrix.setBrightness(brightness);
 
   EEPROM.commit();
 
@@ -259,7 +262,7 @@ void refreshMatrix(bool settingsChanged) {
 
 void printEEPROM() {
   Serial.println("reading eeprom");
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     Serial.print("Byte ");
     Serial.print(i);
     Serial.print(": ");
