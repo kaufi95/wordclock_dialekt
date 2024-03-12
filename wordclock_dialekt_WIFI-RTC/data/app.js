@@ -1,5 +1,3 @@
-// document.addEventListener('DOMContentLoaded', function () {
-// Function to send HTTP POST request
 function sendPostRequest(color) {
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
@@ -69,4 +67,3 @@ function getSelectedBrightness() {
   });
   return selectedBrightness;
 }
-// });
