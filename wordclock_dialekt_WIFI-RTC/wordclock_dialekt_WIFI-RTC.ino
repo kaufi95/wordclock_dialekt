@@ -91,6 +91,7 @@ void setup() {
   // serve static files
   server.serveStatic("/index.html", SPIFFS, "/index.html");
   server.serveStatic("/app.js", SPIFFS, "/app.js");
+  server.serveStatic("/styles.css", SPIFFS, "/styles.css");
 
   // initialize SPIFFS
   if (!SPIFFS.begin()) {
