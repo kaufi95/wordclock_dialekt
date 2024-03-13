@@ -14,7 +14,11 @@ body {
   height: 50px;
   margin: 5px;
   display: inline-block;
-  outline: 1px solid black;
   cursor: pointer;
   border-radius: 5px;
+  outline: 2.5px solid black;
+}
+
+[selected] {
+  outline: 2.5px solid orange;
 }

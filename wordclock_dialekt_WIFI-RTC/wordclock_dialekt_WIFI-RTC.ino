@@ -86,6 +86,7 @@ void setup() {
   // ser server handlers
   server.onNotFound(handleNotFound);
   server.on("/", HTTP_GET, handleConnect);
+  server.on("/status", HTTP_GET, handleStatus);
   server.on("/update", HTTP_POST, handleUpdate);
 
   // serve static files
@@ -158,6 +159,18 @@ void handleConnect() {
   server.send(302, "text/plain", "");
 }
 
+void handleStatus() {
+  JsonDocument doc;
+  doc["color"] = String(color);
+  doc["language"] = String(language);
+  doc["brightness"] = String(brightness);
+
+  String response;
+  serializeJson(doc, response);
+
+  server.send(200, "application/json", response);
+}
+
 void handleUpdate() {
   String body = server.arg("plain");
 
@@ -213,10 +226,10 @@ static byte mapper(const char* input) {
   if (key == "cyan") return 4;
   if (key == "magenta") return 5;
   if (key == "yellow") return 6;
-  if (key == "1") return 64;
-  if (key == "2") return 96;
-  if (key == "3") return 128;
-  if (key == "4") return 160;
+  if (key == "low") return 64;
+  if (key == "mid") return 96;
+  if (key == "high") return 128;
+  if (key == "veryhigh") return 160;
   return 0;
 }
 
