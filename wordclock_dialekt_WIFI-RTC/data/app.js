@@ -26,9 +26,8 @@ function updateUI(data) {
 }
 
 function updateColor(color) {
-  mappedColor = colorMapper(color);
   colorBoxes.forEach((box) => {
-    if (box.getAttribute('value') === mappedColor) {
+    if (box.getAttribute('value') === color) {
       box.setAttribute('selected', true);
     } else {
       box.removeAttribute('selected');
@@ -37,18 +36,16 @@ function updateColor(color) {
 }
 
 function updateLanguage(language) {
-  mappedLanguage = languageMapper(language);
   languageRadioButtons.forEach((button) => {
-    if (button.value === mappedLanguage) {
+    if (button.value === language) {
       button.checked = true;
     }
   });
 }
 
 function updateBrightness(brightness) {
-  mappedBrightness = brightnessMapper(brightness);
   brightnessRadioButtons.forEach((button) => {
-    if (button.value === mappedBrightness) {
+    if (button.value === brightness) {
       button.checked = true;
     }
   });
@@ -142,50 +139,3 @@ function sendPostRequest() {
     })
     .catch((error) => console.error('Error sending POST request:', error));
 }
-
-const colorMapper = (value) => {
-  switch (value) {
-    case '0':
-      return 'white';
-    case '1':
-      return 'red';
-    case '2':
-      return 'green';
-    case '3':
-      return 'blue';
-    case '4':
-      return 'cyan';
-    case '5':
-      return 'magenta';
-    case '6':
-      return 'yellow';
-    default:
-      return 'white';
-  }
-};
-
-const languageMapper = (value) => {
-  switch (value) {
-    case '0':
-      return 'dialekt';
-    case '1':
-      return 'deutsch';
-    default:
-      return 'dialekt';
-  }
-};
-
-const brightnessMapper = (value) => {
-  switch (value) {
-    case '64':
-      return 'low';
-    case '96':
-      return 'mid';
-    case '128':
-      return 'high';
-    case '160':
-      return 'veryhigh';
-    default:
-      return 'mid';
-  }
-};

@@ -161,9 +161,9 @@ void handleConnect() {
 
 void handleStatus() {
   JsonDocument doc;
-  doc["color"] = String(color);
-  doc["language"] = String(language);
-  doc["brightness"] = String(brightness);
+  doc["color"] = mapSettingToString(color, "color");
+  doc["language"] = mapSettingToString(language, "language");
+  doc["brightness"] = mapSettingToString(brightness, "brightness");
 
   String response;
   serializeJson(doc, response);
@@ -188,19 +188,19 @@ void handleUpdate() {
   Serial.println(t);
   rtc.adjust(t);
 
-  byte c = mapper(doc["color"]);
+  byte c = mapSettingToByte(doc["color"]);
   Serial.print("color: ");
   Serial.println(c);
   EEPROM.write(EEC, c);
   color = c;
 
-  byte l = mapper(doc["language"]);
+  byte l = mapSettingToByte(doc["language"]);
   Serial.print("language: ");
   Serial.println(l);
   EEPROM.write(EEL, l);
   language = l;
 
-  byte b = mapper(doc["brightness"]);
+  byte b = mapSettingToByte(doc["brightness"]);
   Serial.print("brightness: ");
   Serial.println(b);
   EEPROM.write(EEB, b);
@@ -215,7 +215,7 @@ void handleUpdate() {
   server.send(200, "text/plain", "");
 }
 
-static byte mapper(const char* input) {
+static byte mapSettingToByte(const char* input) {
   String key = String(input);
   if (key == "dialekt") return 0;
   if (key == "deutsch") return 1;
@@ -231,6 +231,37 @@ static byte mapper(const char* input) {
   if (key == "high") return 128;
   if (key == "veryhigh") return 160;
   return 0;
+}
+
+static String mapSettingToString(byte value, String setting) {
+  if (setting == "color") {
+    switch (value) {
+      case 0: return "white";
+      case 1: return "red";
+      case 2: return "green";
+      case 3: return "blue";
+      case 4: return "cyan";
+      case 5: return "magenta";
+      case 6: return "yellow";
+      default: return "white";
+    }
+  }
+  if (setting == "language") {
+    switch (value) {
+      case 0: return "dialekt";
+      case 1: return "deutsch";
+      default: return "dialekt";
+    }
+  }
+  if (setting == "brightness") {
+    switch (value) {
+      case 64: return "low";
+      case 96: return "mid";
+      case 128: return "high";
+      case 160: return "veryhigh";
+      default: return "mid";
+    }
+  }
 }
 
 static time_t mapTime(const char* timestamp) {
