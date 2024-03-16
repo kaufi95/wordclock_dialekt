@@ -17,7 +17,7 @@
 
 // define WiFi settings
 #define SSID "WordClock"
-#define UPTIME 60000
+#define UPTIME 600000
 
 // define ports
 #define HTTP_PORT 80
@@ -155,10 +155,10 @@ void loop() {
 // webserver handlers
 
 void updateServer() {
-  if (!server.client() && millis() > UPTIME) {
+  if (millis() > UPTIME) {
     Serial.println("Shutting down Webserver and WiFi...");
     server.stop();
-    WiFi.disconnect(true, true);
+    WiFi.mode(WIFI_OFF);
     webserverRunning = false;
     return;
   }
@@ -166,7 +166,6 @@ void updateServer() {
 }
 
 void handleNotFound() {
-  // server.send(404, "text/plain", "File Not Found");
   server.sendHeader("Location", "/index.html", true);
   server.send(302, "text/plain", "");
 }
