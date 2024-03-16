@@ -17,6 +17,7 @@
 
 // define WiFi settings
 #define SSID "WordClock"
+#define UPTIME 60000
 
 // define ports
 #define HTTP_PORT 80
@@ -29,10 +30,11 @@
 #define HEIGHT 11  // height of LED matrix + additional row for minute leds
 
 // define global variables
-byte color = 0;               // color
-byte language = 0;            // language (0: dialekt; 1: deutsch)
-byte brightness = 128;        // brightness
-byte lastMin = 0;             // last minute
+byte color = 0;         // color
+byte language = 0;      // language (0: dialekt; 1: deutsch)
+byte brightness = 128;  // brightness
+byte lastMin = 0;       // last minute
+bool webserverRunning;
 
 // create Adafruit_NeoMatrix object
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(WIDTH, HEIGHT, NEOPIXEL_PIN,
@@ -81,9 +83,10 @@ void setup() {
 
   // start server
   server.begin();
+  webserverRunning = true;
   Serial.println("HTTP server started");
 
-  // ser server handlers
+  // set server handlers
   server.onNotFound(handleNotFound);
   server.on("/", HTTP_GET, handleConnect);
   server.on("/status", HTTP_GET, handleStatus);
@@ -93,6 +96,8 @@ void setup() {
   server.serveStatic("/index.html", SPIFFS, "/index.html");
   server.serveStatic("/app.js", SPIFFS, "/app.js");
   server.serveStatic("/styles.css", SPIFFS, "/styles.css");
+
+  Serial.println("Handlers set and files served");
 
   // initialize SPIFFS
   if (!SPIFFS.begin()) {
@@ -109,6 +114,7 @@ void setup() {
     while (1)
       delay(10);
   }
+  Serial.println("RTC initialized");
 
   if (rtc.lostPower()) {
     rtc.adjust(DateTime(2024, 1, 1, 0, 0, 0));
@@ -119,9 +125,9 @@ void setup() {
 
   // read stored values from eeprom
   Serial.println("reading eeprom @ setup");
-  color = EEPROM.read(EEC);         // stored color
-  language = EEPROM.read(EEL);      // stored language
-  brightness = EEPROM.read(EEB);    // stored brightness
+  color = EEPROM.read(EEC);       // stored color
+  language = EEPROM.read(EEL);    // stored language
+  brightness = EEPROM.read(EEB);  // stored brightness
 
   // init LED matrix
   Serial.println("initiating matrix");
@@ -141,12 +147,23 @@ void loop() {
   displayTimeInfo(localTime, "AT");
   refreshMatrix(false);
 
-  server.handleClient();
+  if (webserverRunning) updateServer();
   delay(1000);
 }
 
 // ------------------------------------------------------------
 // webserver handlers
+
+void updateServer() {
+  if (server.client() == 0 && millis() > UPTIME) {
+    Serial.println("Shutting down Webserver and WiFi...");
+    server.stop();
+    WiFi.disconnect(true, true)
+    webserverRunning = false;
+    return;
+  }
+  server.handleClient();
+}
 
 void handleNotFound() {
   // server.send(404, "text/plain", "File Not Found");
