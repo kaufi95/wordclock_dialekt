@@ -155,10 +155,10 @@ void loop() {
 // webserver handlers
 
 void updateServer() {
-  if (server.client() == 0 && millis() > UPTIME) {
+  if (!server.client() && millis() > UPTIME) {
     Serial.println("Shutting down Webserver and WiFi...");
     server.stop();
-    WiFi.disconnect(true, true)
+    WiFi.disconnect(true, true);
     webserverRunning = false;
     return;
   }
@@ -408,18 +408,15 @@ void timeToMatrix(time_t time) {
   }
 
   // show minutes
-  if (minutes >= 0 && minutes < 5) {
-    uhr();
-  } else if (minutes >= 5 && minutes < 10) {
-    five(true, false);
+  if (minutes >= 5 && minutes < 10) {
+    five(true);
     Serial.print(" ");
     after();
   } else if (minutes >= 10 && minutes < 15) {
-    ten(true, false);
+    ten(true);
     Serial.print(" ");
     after();
   } else if (minutes >= 15 && minutes < 20) {
-    ;
     quarter();
     Serial.print(" ");
     after();
@@ -428,7 +425,7 @@ void timeToMatrix(time_t time) {
     Serial.print(" ");
     after();
   } else if (minutes >= 25 && minutes < 30) {
-    five(true, false);
+    five(true);
     Serial.print(" ");
     to();
     Serial.print(" ");
@@ -436,7 +433,7 @@ void timeToMatrix(time_t time) {
   } else if (minutes >= 30 && minutes < 35) {
     half();
   } else if (minutes >= 35 && minutes < 40) {
-    five(true, false);
+    five(true);
     Serial.print(" ");
     after();
     Serial.print(" ");
@@ -450,11 +447,11 @@ void timeToMatrix(time_t time) {
     Serial.print(" ");
     to();
   } else if (minutes >= 50 && minutes < 55) {
-    ten(true, false);
+    ten(true);
     Serial.print(" ");
     to();
   } else if (minutes >= 55 && minutes < 60) {
-    five(true, false);
+    five(true);
     Serial.print(" ");
     to();
   }
@@ -478,7 +475,7 @@ void timeToMatrix(time_t time) {
   switch (hours) {
     case 0:
       // Zwölfe
-      twelve(true);
+      twelve();
       break;
     case 1:
       // Oans
@@ -498,19 +495,19 @@ void timeToMatrix(time_t time) {
       break;
     case 4:
       // Viere
-      four(true);
+      four();
       break;
     case 5:
       // Fünfe
-      five(false, true);
+      five(false);
       break;
     case 6:
       // Sechse
-      six(true);
+      six();
       break;
     case 7:
       // Siebne
-      seven(true, true);
+      seven();
       break;
     case 8:
       // Achte
@@ -518,16 +515,20 @@ void timeToMatrix(time_t time) {
       break;
     case 9:
       // Nüne
-      nine(true);
+      nine();
       break;
     case 10:
       // Zehne
-      ten(false, true);
+      ten(false);
       break;
     case 11:
       // Elfe
-      eleven(true);
+      eleven();
       break;
+  }
+
+  if (minutes >= 0 && minutes < 5) {
+    uhr();
   }
 
   // pixels for minutes in additional row
@@ -579,28 +580,23 @@ void two() {
 
 void three() {
   // drei
+  Serial.print("drei");
   switch (language) {
     case 0:
-      Serial.print("drei");
       turnPixelsOn(0, 3, 5);
       break;
     case 1:
-      Serial.print("drei");
       turnPixelsOn(0, 3, 5);
       break;
   }
 }
 
-void four(bool e) {
+void four() {
   // vier/e/vier
   switch (language) {
     case 0:
-      Serial.print("vier");
-      turnPixelsOn(0, 3, 8);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(4, 4, 8);
-      }
+      Serial.print("viere");
+      turnPixelsOn(0, 4, 8);
       break;
     case 1:
       Serial.print("vier");
@@ -609,28 +605,23 @@ void four(bool e) {
   }
 }
 
-void five(bool min, bool e) {
+void five(bool min) {
   // fünf/e/fünf
   if (min) {
+    Serial.print("fünf");
     switch (language) {
       case 0:
-        Serial.print("fünf");
         turnPixelsOn(0, 3, 1);
         break;
       case 1:
-        Serial.print("fünf");
         turnPixelsOn(0, 3, 1);
         break;
     }
   } else {
     switch (language) {
       case 0:
-        Serial.print("fünf");
-        turnPixelsOn(0, 3, 7);
-        if (e) {
-          Serial.print("e");
-          turnPixelsOn(4, 4, 7);
-        }
+        Serial.print("fünfe");
+        turnPixelsOn(0, 4, 7);
         break;
       case 1:
         Serial.print("fünf");
@@ -640,16 +631,12 @@ void five(bool min, bool e) {
   }
 }
 
-void six(bool e) {
+void six() {
   // sechs/e/sechs
   switch (language) {
     case 0:
-      Serial.print("sechs");
-      turnPixelsOn(5, 9, 5);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(10, 10, 5);
-      }
+      Serial.print("sechse");
+      turnPixelsOn(5, 10, 5);
       break;
     case 1:
       Serial.print("sechs");
@@ -658,20 +645,12 @@ void six(bool e) {
   }
 }
 
-void seven(bool n, bool e) {
+void seven() {
   // siebn/e/sieben
   switch (language) {
     case 0:
-      Serial.print("sieb");
-      turnPixelsOn(0, 3, 6);
-      if (n) {
-        Serial.print("n");
-        turnPixelsOn(4, 4, 6);
-      }
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(5, 5, 6);
-      }
+      Serial.print("siebne");
+      turnPixelsOn(0, 5, 6);
       break;
     case 1:
       Serial.print("sieben");
@@ -684,12 +663,8 @@ void eight(bool e) {
   // acht/e/acht
   switch (language) {
     case 0:
-      Serial.print("acht");
-      turnPixelsOn(6, 9, 7);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(10, 10, 7);
-      }
+      Serial.print("achte");
+      turnPixelsOn(6, 10, 7);
       break;
     case 1:
       Serial.print("acht");
@@ -698,16 +673,12 @@ void eight(bool e) {
   }
 }
 
-void nine(bool e) {
+void nine() {
   // nün/e/neun
   switch (language) {
     case 0:
-      Serial.print("nün");
-      turnPixelsOn(7, 9, 6);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(10, 10, 6);
-      }
+      Serial.print("nüne");
+      turnPixelsOn(7, 10, 6);
       break;
     case 1:
       Serial.print("neun");
@@ -716,28 +687,23 @@ void nine(bool e) {
   }
 }
 
-void ten(bool min, bool e) {
+void ten(bool min) {
   // zehn/e/zehn
   if (min) {
+    Serial.print("zehn");
     switch (language) {
       case 0:
-        Serial.print("zehn");
         turnPixelsOn(7, 10, 2);
         break;
       case 1:
-        Serial.print("zehn");
         turnPixelsOn(7, 10, 2);
         break;
     }
   } else {
     switch (language) {
       case 0:
-        Serial.print("zehn");
-        turnPixelsOn(6, 9, 8);
-        if (e) {
-          Serial.print("e");
-          turnPixelsOn(10, 10, 8);
-        }
+        Serial.print("zehne");
+        turnPixelsOn(6, 10, 8);
         break;
       case 1:
         Serial.print("zehn");
@@ -747,36 +713,28 @@ void ten(bool min, bool e) {
   }
 }
 
-void eleven(bool e) {
+void eleven() {
   // elf/e
+  Serial.print("elf");
   switch (language) {
     case 0:
-      Serial.print("elf");
-      turnPixelsOn(0, 2, 9);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(3, 3, 9);
-      }
+      turnPixelsOn(0, 3, 9);
       break;
     case 1:
-      Serial.print("elf");
       turnPixelsOn(0, 2, 9);
       break;
   }
 }
 
-void twelve(bool e) {
+void twelve() {
   // zwölf/e
-  Serial.print("zwölf");
   switch (language) {
     case 0:
-      turnPixelsOn(5, 9, 9);
-      if (e) {
-        Serial.print("e");
-        turnPixelsOn(10, 10, 9);
-      }
+      Serial.print("zwölfe");
+      turnPixelsOn(5, 10, 9);
       break;
     case 1:
+      Serial.print("zwölf");
       turnPixelsOn(5, 9, 8);
       break;
   }
@@ -812,14 +770,12 @@ void twenty() {
 
 void to() {
   // vor/vor
-  turnPixelsOn(1, 3, 3);
+  Serial.print("vor");
   switch (language) {
     case 0:
-      Serial.print("vor");
       turnPixelsOn(1, 3, 3);
       break;
     case 1:
-      Serial.print("vor");
       turnPixelsOn(1, 3, 3);
       break;
   }
@@ -841,13 +797,12 @@ void after() {
 
 void half() {
   // halb
+  Serial.print("halb");
   switch (language) {
     case 0:
-      Serial.print("halb");
       turnPixelsOn(0, 3, 4);
       break;
     case 1:
-      Serial.print("halb");
       turnPixelsOn(0, 3, 4);
       break;
   }
