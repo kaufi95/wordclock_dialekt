@@ -11,38 +11,9 @@
     <div class="container">
       <h1>WordClock Controller</h1>
       <p>Color:</p>
-      <div id="color-box-container">
-        <div
-          class="color-box"
-          style="background-color: #ffffff"
-          value="65535"
-        ></div>
-        <div
-          class="color-box"
-          style="background-color: #ff0000"
-          value="63488"
-        ></div>
-        <div
-          class="color-box"
-          style="background-color: #008000"
-          value="2016"
-        ></div>
-        <div class="color-box" style="background-color: blue" value="31"></div>
-        <div
-          class="color-box"
-          style="background-color: #00ffff"
-          value="2047"
-        ></div>
-        <div
-          class="color-box"
-          style="background-color: #ff00ff"
-          value="63519"
-        ></div>
-        <div
-          class="color-box"
-          style="background-color: #ffff00"
-          value="65504"
-        ></div>
+      <div id="color-picker-container">
+        <!-- <label for="color-picker">Select your favorite color:</label> -->
+        <input name="color" type="color" id="color-picker" value="#FFFFFF" />
       </div>
 
       <p>Language:</p>
@@ -61,13 +32,11 @@
         <label for="b-mid">Middle</label>
         <input type="radio" id="b-high" name="brightness" value="192" />
         <label for="b-high">High</label>
-        <input type="radio" id="b-vhigh" name="brightness" value="255" />
-        <label for="b-vhigh">Very high</label>
+        <!-- <input type="radio" id="b-vhigh" name="brightness" value="255" />
+        <label for="b-vhigh">Very high</label> -->
       </div>
 
-      <button id="update-btn" onclick="sendPostRequest()" style="margin: 20px">
-        Update
-      </button>
+      <button id="update-btn" onclick="sendPostRequest()">Update</button>
     </div>
   </body>
 </html>

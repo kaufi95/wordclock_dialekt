@@ -12,9 +12,6 @@
 
 #include <Adafruit_NeoMatrix.h>
 
-// #include <NTPClient.h>
-// #include <WiFiUdp.h>
-
 // define WiFi settings
 #define SSID "WordClock"
 #define DNSName "wordclock"
@@ -40,16 +37,12 @@ struct Config {
 };
 
 // create config object and set default values
-Config config = { 16777215, 128, "dialekt" };
+Config config = { 65535, 128, "dialekt" };
 
 uint8_t lastMin;
 
 // create RTC object
 RTC_DS3231 rtc;
-
-// // create ntp client
-// WiFiUDP ntpUDP;
-// NTPClient timeClient(ntpUDP);
 
 // create webserver
 AsyncWebServer server(HTTP_PORT);
@@ -493,9 +486,10 @@ void timeToMatrix(time_t time) {
   }
 
   // pixels for minutes in additional row
-  for (uint8_t i = 1; i <= minutes % 5; i++) {
-    matrix.drawPixel(i - 1, 10, config.color);
-  }
+  turnPixelsOn(0, (minutes % 5) - 1, 10);
+  // for (uint8_t i = 1; i <= minutes % 5; i++) {
+  //   matrix.drawPixel(i - 1, 10, config.color);
+  // }
 
   Serial.print(" + ");
   Serial.print(minutes % 5);
