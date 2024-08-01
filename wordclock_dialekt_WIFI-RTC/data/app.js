@@ -82,7 +82,7 @@ function getSelectedBrightness() {
 }
 
 function onLoad() {
-  fetch('http://192.168.4.1/status')
+  fetch('http://' + window.location.host + '/status')
     .then((response) => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -118,13 +118,13 @@ function sendPostRequest() {
   }
 
   const body = {
-    datetime: new Date().valueOf().toString().slice(0, -3),
     color: color,
     language: language,
-    brightness: brightness
+    brightness: brightness,
+    datetime: new Date().valueOf().toString().slice(0, -3)
   };
 
-  fetch('http://192.168.4.1/update', {
+  fetch('http://' + window.location.host + '/update', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
