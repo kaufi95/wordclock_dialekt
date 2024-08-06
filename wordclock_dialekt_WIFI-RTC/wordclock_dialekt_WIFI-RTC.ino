@@ -12,6 +12,9 @@
 
 #include <Adafruit_NeoMatrix.h>
 
+#include "src/dialekt.h"
+#include "src/deutsch.h"
+
 // define WiFi settings
 #define SSID "WordClock"
 #define DNSName "wordclock"
@@ -278,21 +281,37 @@ time_t generateTimeByRTC() {
   return time;
 }
 
-// turns the pixels from startIndex to endIndex of startIndex row on
-void turnPixelsOn(uint16_t startIndex, uint16_t endIndex, uint16_t row) {
-  for (int i = startIndex; i <= endIndex; i++) {
-    matrix.drawPixel(i, row, config.color);
-  }
-}
-
 // clears, generates and fills pixels
 void refreshMatrix(bool settingsChanged) {
   time_t time = AT.toLocal(generateTimeByRTC());
   if (lastMin != minute(time) || settingsChanged) {
     matrix.fillScreen(0);
-    timeToMatrix(time);
+    fillMatrix(time);
     matrix.show();
     lastMin = minute(time);
+  }
+}
+
+// converts time into matrix
+void fillMatrix(time_t time) {
+  if (config.language == "dialekt") {
+    bool **pixels = dialekt::timeToMatrix(time);
+    turnPixelsOn(pixels);
+  }
+  if (config.language == "deutsch") {
+    bool **pixels = deutsch::timeToMatrix(time);
+    turnPixelsOn(pixels);
+  }
+}
+
+// turns the pixels from startIndex to endIndex of startIndex row on
+void turnPixelsOn(bool **pixels) {
+  for (uint8_t i = 0; i < 11; i++) {
+    for (uint8_t j = 0; j < 11; j++) {
+      if (pixels[i][j] == true) {
+        matrix.drawPixel(i, j, config.color);
+      }
+    }
   }
 }
 
@@ -330,408 +349,4 @@ void displayTimeInfo(time_t t, String component) {
     Serial.print("0");
   Serial.print(second(t));
   Serial.println();
-}
-
-// ------------------------------------------------------------
-
-// determine if "es isch/es ist" is shown
-bool showEsIst(uint8_t minutes) {
-  bool randomized = random() % 2 == 0;
-  bool showEsIst = randomized || minutes % 30 < 5;
-  return showEsIst;
-}
-
-// converts time into matrix
-void timeToMatrix(time_t time) {
-  uint8_t hours = hour(time);
-  uint8_t minutes = minute(time);
-
-  // show "Es ist" or "Es isch" randomized
-  if (showEsIst(minutes)) {
-    // Es isch/ist
-    if (config.language == "dialekt") {
-      Serial.print("Es isch ");
-      turnPixelsOn(1, 2, 0);
-      turnPixelsOn(5, 8, 0);
-    }
-    if (config.language == "deutsch") {
-      Serial.print("Es ist ");
-      turnPixelsOn(1, 2, 0);
-      turnPixelsOn(5, 7, 0);
-    }
-  }
-
-  // show minutes
-  if (minutes >= 5 && minutes < 10) {
-    min_five();
-    Serial.print(" ");
-    after();
-  } else if (minutes >= 10 && minutes < 15) {
-    min_ten();
-    Serial.print(" ");
-    after();
-  } else if (minutes >= 15 && minutes < 20) {
-    quarter();
-    Serial.print(" ");
-    after();
-  } else if (minutes >= 20 && minutes < 25) {
-    twenty();
-    Serial.print(" ");
-    after();
-  } else if (minutes >= 25 && minutes < 30) {
-    min_five();
-    Serial.print(" ");
-    to();
-    Serial.print(" ");
-    half();
-  } else if (minutes >= 30 && minutes < 35) {
-    half();
-  } else if (minutes >= 35 && minutes < 40) {
-    min_five();
-    Serial.print(" ");
-    after();
-    Serial.print(" ");
-    half();
-  } else if (minutes >= 40 && minutes < 45) {
-    twenty();
-    Serial.print(" ");
-    to();
-  } else if (minutes >= 45 && minutes < 50) {
-    quarter();
-    Serial.print(" ");
-    to();
-  } else if (minutes >= 50 && minutes < 55) {
-    min_ten();
-    Serial.print(" ");
-    to();
-  } else if (minutes >= 55 && minutes < 60) {
-    min_five();
-    Serial.print(" ");
-    to();
-  }
-
-  Serial.print(" ");
-
-  // convert hours to 12h format
-  if (hours >= 12) {
-    hours -= 12;
-  }
-
-  if (minutes >= 25) {
-    hours++;
-  }
-
-  if (hours == 12) {
-    hours = 0;
-  }
-
-  // show hours
-  switch (hours) {
-    case 0:
-      // Zwölfe
-      hour_twelve();
-      break;
-    case 1:
-      // Oans
-      if (minutes >= 0 && minutes < 5) {
-        hour_one(false);
-      } else {
-        hour_one(true);
-      }
-      break;
-    case 2:
-      // Zwoa
-      hour_two();
-      break;
-    case 3:
-      // Drei
-      hour_three();
-      break;
-    case 4:
-      // Viere
-      hour_four();
-      break;
-    case 5:
-      // Fünfe
-      hour_five();
-      break;
-    case 6:
-      // Sechse
-      hour_six();
-      break;
-    case 7:
-      // Siebne
-      hour_seven();
-      break;
-    case 8:
-      // Achte
-      hour_eight();
-      break;
-    case 9:
-      // Nüne
-      hour_nine();
-      break;
-    case 10:
-      // Zehne
-      hour_ten();
-      break;
-    case 11:
-      // Elfe
-      hour_eleven();
-      break;
-  }
-
-  if (minutes >= 0 && minutes < 5) {
-    uhr();
-  }
-
-  // pixels for minutes in additional row
-  turnPixelsOn(0, (minutes % 5) - 1, 10);
-  // for (uint8_t i = 1; i <= minutes % 5; i++) {
-  //   matrix.drawPixel(i - 1, 10, config.color);
-  // }
-
-  Serial.print(" + ");
-  Serial.print(minutes % 5);
-  Serial.print(" min");
-  Serial.println();
-}
-
-// ------------------------------------------------------------
-// numbers as labels
-
-void hour_one(bool s) {
-  // oans/eins
-  if (config.language == "dialekt") {
-    Serial.print("oans");
-    turnPixelsOn(7, 10, 4);
-  }
-  if (config.language == "deutsch") {
-    if (s) {
-      Serial.print("eins");
-      turnPixelsOn(7, 10, 4);
-    } else {
-      Serial.print("ein");
-      turnPixelsOn(7, 9, 4);
-    }
-  }
-}
-
-void hour_two() {
-  // zwoa/zwei
-  if (config.language == "dialekt") {
-    Serial.print("zwoa");
-    turnPixelsOn(5, 8, 4);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("zwei");
-    turnPixelsOn(5, 8, 4);
-  }
-}
-
-void hour_three() {
-  // drei
-  Serial.print("drei");
-  if (config.language == "dialekt") {
-    turnPixelsOn(0, 3, 5);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(0, 3, 5);
-  }
-}
-
-void hour_four() {
-  // vier/e/vier
-  if (config.language == "dialekt") {
-    Serial.print("viere");
-    turnPixelsOn(0, 4, 8);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("vier");
-    turnPixelsOn(0, 3, 8);
-  }
-}
-
-void hour_five() {
-  // fünfe/fünf
-  if (config.language == "dialekt") {
-    Serial.print("fünfe");
-    turnPixelsOn(0, 4, 7);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("fünf");
-    turnPixelsOn(0, 3, 7);
-  }
-}
-
-void min_five() {
-  // fünf/fünf
-  Serial.print("fünf");
-  if (config.language == "dialekt") {
-    turnPixelsOn(0, 3, 1);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(0, 3, 1);
-  }
-}
-
-void hour_six() {
-  // sechse/sechs
-  if (config.language == "dialekt") {
-    Serial.print("sechse");
-    turnPixelsOn(5, 10, 5);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("sechs");
-    turnPixelsOn(5, 9, 5);
-  }
-}
-
-void hour_seven() {
-  // siebne/sieben
-  if (config.language == "dialekt") {
-    Serial.print("siebne");
-    turnPixelsOn(0, 5, 6);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("sieben");
-    turnPixelsOn(0, 5, 6);
-  }
-}
-
-void hour_eight() {
-  // achte/acht
-  if (config.language == "dialekt") {
-    Serial.print("achte");
-    turnPixelsOn(6, 10, 7);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("acht");
-    turnPixelsOn(6, 9, 7);
-  }
-}
-
-void hour_nine() {
-  // nüne/neun
-  if (config.language == "dialekt") {
-    Serial.print("nüne");
-    turnPixelsOn(7, 10, 6);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("neun");
-    turnPixelsOn(7, 10, 6);
-  }
-}
-
-void hour_ten() {
-  // zehne/zehn
-  if (config.language == "dialekt") {
-    Serial.print("zehne");
-    turnPixelsOn(6, 10, 8);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("zehn");
-    turnPixelsOn(3, 6, 9);
-  }
-}
-
-void min_ten() {
-  // zehn/zehn
-  Serial.print("zehn");
-  if (config.language == "dialekt") {
-    turnPixelsOn(7, 10, 2);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(7, 10, 2);
-  }
-}
-
-void hour_eleven() {
-  // elfe/elf
-  if (config.language == "dialekt") {
-    Serial.print("elfe");
-    turnPixelsOn(0, 3, 9);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("elf");
-    turnPixelsOn(0, 2, 9);
-  }
-}
-
-void hour_twelve() {
-  // zwölfe/zwölf
-  if (config.language == "dialekt") {
-    Serial.print("zwölfe");
-    turnPixelsOn(5, 10, 9);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("zwölf");
-    turnPixelsOn(5, 9, 8);
-  }
-}
-
-void quarter() {
-  // viertel
-  Serial.print("viertel");
-  if (config.language == "dialekt") {
-    turnPixelsOn(0, 6, 2);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(0, 6, 2);
-  }
-}
-
-void twenty() {
-  // zwanzig
-  Serial.print("zwanzig");
-  if (config.language == "dialekt") {
-    turnPixelsOn(4, 10, 1);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(4, 10, 1);
-  }
-}
-
-// ------------------------------------------------------------
-
-void to() {
-  // vor/vor
-  Serial.print("vor");
-  if (config.language == "dialekt") {
-    turnPixelsOn(1, 3, 3);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(1, 3, 3);
-  }
-}
-
-void after() {
-  // noch/nach
-  if (config.language == "dialekt") {
-    Serial.print("noch");
-    turnPixelsOn(5, 8, 3);
-  }
-  if (config.language == "deutsch") {
-    Serial.print("nach");
-    turnPixelsOn(5, 8, 3);
-  }
-}
-
-void half() {
-  // halb
-  Serial.print("halb");
-  if (config.language == "dialekt") {
-    turnPixelsOn(0, 3, 4);
-  }
-  if (config.language == "deutsch") {
-    turnPixelsOn(0, 3, 4);
-  }
-}
-
-void uhr() {
-  // uhr
-  if (config.language == "deutsch") {
-    Serial.print(" uhr");
-    turnPixelsOn(8, 10, 9);
-  }
 }
