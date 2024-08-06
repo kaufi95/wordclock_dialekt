@@ -15,7 +15,7 @@ E L F E I Z W Ö L F E
 */
 
 #include <Arduino.h>
-#include <time.h>
+#include <TimeLib.h>
 
 namespace dialekt
 {

@@ -2,7 +2,7 @@
 #define DEUTSCH_H
 
 #include <Arduino.h>
-#include <time.h>
+#include <TimeLib.h>
 
 namespace deutsch
 {

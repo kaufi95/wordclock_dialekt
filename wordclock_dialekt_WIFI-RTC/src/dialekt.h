@@ -2,7 +2,7 @@
 #define DIALEKT_H
 
 #include <Arduino.h>
-#include <time.h>
+#include <TimeLib.h>
 
 namespace dialekt
 {
