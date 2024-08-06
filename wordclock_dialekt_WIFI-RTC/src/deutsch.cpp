@@ -16,6 +16,7 @@ E L F Z E H N E U H R
 
 #include <Arduino.h>
 #include <TimeLib.h>
+#include <array>
 
 namespace deutsch
 {
@@ -43,10 +44,10 @@ namespace deutsch
     void half();
     void uhr();
 
-    static bool matrix[11][11] = {false};
+    static std::array<std::array<bool, 11>, 11> matrix = {false};
 
     // converts time into matrix
-    bool **timeToMatrix(time_t time)
+    std::array<std::array<bool, 11>, 11> timeToMatrix(time_t time)
     {
         uint8_t hours = hour(time);
         uint8_t minutes = minute(time);
@@ -221,7 +222,7 @@ namespace deutsch
         Serial.print(" min");
         Serial.println();
 
-        return reinterpret_cast<bool **>(matrix);
+        return matrix;
     }
 
     // determine if "es ist" is shown

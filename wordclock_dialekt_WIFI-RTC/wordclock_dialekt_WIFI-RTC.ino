@@ -295,21 +295,21 @@ void refreshMatrix(bool settingsChanged) {
 // converts time into matrix
 void fillMatrix(time_t time) {
   if (config.language == "dialekt") {
-    bool **pixels = dialekt::timeToMatrix(time);
+    auto pixels = dialekt::timeToMatrix(time);
     turnPixelsOn(pixels);
   }
   if (config.language == "deutsch") {
-    bool **pixels = deutsch::timeToMatrix(time);
+    auto pixels = deutsch::timeToMatrix(time);
     turnPixelsOn(pixels);
   }
 }
 
 // turns the pixels from startIndex to endIndex of startIndex row on
-void turnPixelsOn(bool **pixels) {
+void turnPixelsOn(std::array<std::array<bool, 11>, 11> &pixels) {
   for (uint8_t i = 0; i < 11; i++) {
     for (uint8_t j = 0; j < 11; j++) {
-      if (pixels[i][j] == true) {
-        matrix.drawPixel(i, j, config.color);
+      if (pixels[j][i]) {
+        matrix.drawPixel(j, i, config.color);
       }
     }
   }
