@@ -117,6 +117,7 @@ function sendPostRequest() {
         throw new Error('Network response was not ok');
       }
       console.log('POST request sent successfully');
+      console.log(body);
     })
     .catch((error) => console.error('Error sending POST request:', error));
 }
