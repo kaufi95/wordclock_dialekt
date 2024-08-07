@@ -83,19 +83,20 @@ function sendPostRequest() {
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
 
-  if (color === '') {
-    alert('Please select a color');
-    return;
+  const body = {
+    datetime: new Date().valueOf().toString().slice(0, -3)
+  };
+
+  if (color !== '') {
+    body.color = color;
   }
 
-  if (language === '') {
-    alert('Please select a language');
-    return;
+  if (language !== '') {
+    body.language = language;
   }
 
-  if (brightness === '') {
-    alert('Please select a brightness');
-    return;
+  if (brightness !== '') {
+    body.brightness = brightness;
   }
 
   const body = {
