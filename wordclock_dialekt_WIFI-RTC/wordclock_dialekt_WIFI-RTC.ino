@@ -295,23 +295,16 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
     return;
   }
 
-  if (doc["color"])
-    config.color = (uint16_t)String(doc["color"]).toInt();
-  if (doc["brightness"])
-    config.brightness = (uint8_t)String(doc["brightness"]).toInt();
-  if (doc["language"])
-    config.language = String(doc["language"]);
-  if (doc["ntp"])
-    config.ntp = (bool)String(doc["ntp"]);
+  if (doc["color"]) config.color = (uint16_t)String(doc["color"]).toInt();
+  if (doc["brightness"]) config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  if (doc["language"]) config.language = String(doc["language"]);
+  if (doc["ntp"]) config.ntp = (bool)String(doc["ntp"]);
 
   if (config.ntp) {
     String old_ssid = config.ssid;
-    if (doc["ssid"])
-      config.ssid = String(doc["ssid"]);
-    if (doc["pw"])
-      config.pw = String(doc["pw"]);
-    if (old_ssid != config.ssid)
-      reconnect = true;
+    if (doc["ssid"]) config.ssid = String(doc["ssid"]);
+    if (doc["pw"]) config.pw = String(doc["pw"]);
+    if (old_ssid != config.ssid) reconnect = true;
   } else {
     time_t time = mapTime(String(doc["datetime"]).c_str());
     rtc.adjust(time);
