@@ -1,5 +1,8 @@
 {
   "color": "65535",
   "language": "dialekt",
-  "brightness": "128"
+  "brightness": "128",
+  "ntp": false,
+  "ssid": "",
+  "pw": ""
 }
