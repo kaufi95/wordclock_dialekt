@@ -151,14 +151,6 @@ void displayTime() {
   displayTimeInfo(timeAT, "AT");
 }
 
-void displayTime() {
-  time_t timeRTC = generateTimeByRTC();
-  displayTimeInfo(timeRTC, "RTC");
-
-  time_t timeAT = AT.toLocal(timeRTC);
-  displayTimeInfo(timeAT, "AT");
-}
-
 void printSettings() {
   Serial.println("Color:\t" + String(config.color));
   Serial.println("Bright:\t" + String(config.brightness));

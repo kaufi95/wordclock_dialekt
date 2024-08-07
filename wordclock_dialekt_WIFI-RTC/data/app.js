@@ -99,7 +99,6 @@ function sendPostRequest() {
     body.brightness = brightness;
   }
 
-
   fetch('http://' + window.location.host + '/update', {
     method: 'POST',
     headers: {
