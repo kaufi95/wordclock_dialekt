@@ -83,27 +83,22 @@ function sendPostRequest() {
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
 
-  if (color === '') {
-    alert('Please select a color');
-    return;
-  }
-
-  if (language === '') {
-    alert('Please select a language');
-    return;
-  }
-
-  if (brightness === '') {
-    alert('Please select a brightness');
-    return;
-  }
-
   const body = {
-    color: color,
-    language: language,
-    brightness: brightness,
     datetime: new Date().valueOf().toString().slice(0, -3)
   };
+
+  if (color !== '') {
+    body.color = color;
+  }
+
+  if (language !== '') {
+    body.language = language;
+  }
+
+  if (brightness !== '') {
+    body.brightness = brightness;
+  }
+
 
   fetch('http://' + window.location.host + '/update', {
     method: 'POST',

@@ -76,9 +76,6 @@ void setup() {
 
   delay(1000);
 
-  Serial.println("default settings");
-  printSettings();
-
   // load stored values
   Serial.println("reading settings from file");
   loadSettings(SETTINGS_FILE);
@@ -141,15 +138,25 @@ void setup() {
 }
 
 void loop() {
-  time_t time = generateTimeByRTC();
-  displayTimeInfo(time, "RTC");
-
-  time_t localTime = AT.toLocal(time);
-  displayTimeInfo(localTime, "AT");
-
+  displayTime();
   refreshMatrix(false);
-
   delay(15000);
+}
+
+void displayTime() {
+  time_t timeRTC = generateTimeByRTC();
+  displayTimeInfo(timeRTC, "RTC");
+
+  time_t timeAT = AT.toLocal(timeRTC);
+  displayTimeInfo(timeAT, "AT");
+}
+
+void displayTime() {
+  time_t timeRTC = generateTimeByRTC();
+  displayTimeInfo(timeRTC, "RTC");
+
+  time_t timeAT = AT.toLocal(timeRTC);
+  displayTimeInfo(timeAT, "AT");
 }
 
 void printSettings() {
@@ -196,11 +203,11 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
     return;
   }
 
-  config.color = (uint16_t)String(doc["color"]).toInt();
-  config.brightness = (uint8_t)String(doc["brightness"]).toInt();
-  config.language = String(doc["language"]);
   time_t time = mapTime(String(doc["datetime"]).c_str());
   rtc.adjust(time);
+  if (doc["color"]) config.color = (uint16_t)String(doc["color"]).toInt();
+  if (doc["brightness"]) config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  if (doc["language"]) config.language = String(doc["language"]);
 
   matrix.setBrightness(config.brightness);
   refreshMatrix(true);
