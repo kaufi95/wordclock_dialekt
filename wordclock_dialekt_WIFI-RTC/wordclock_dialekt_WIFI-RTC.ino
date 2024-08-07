@@ -297,10 +297,12 @@ void fillMatrix(time_t time) {
   if (config.language == "dialekt") {
     auto pixels = dialekt::timeToMatrix(time);
     turnPixelsOn(pixels);
+    printMatrix(pixels);
   }
   if (config.language == "deutsch") {
     auto pixels = deutsch::timeToMatrix(time);
     turnPixelsOn(pixels);
+    printMatrix(pixels);
   }
 }
 
@@ -308,10 +310,19 @@ void fillMatrix(time_t time) {
 void turnPixelsOn(std::array<std::array<bool, 11>, 11> &pixels) {
   for (uint8_t i = 0; i < 11; i++) {
     for (uint8_t j = 0; j < 11; j++) {
-      if (pixels[j][i]) {
+      if (pixels[i][j]) {
         matrix.drawPixel(j, i, config.color);
       }
     }
+  }
+}
+
+void printMatrix(std::array<std::array<bool, 11>, 11> &pixels) {
+  for (uint8_t i = 0; i < 11; i++) {
+    for (uint8_t j = 0; j < 11; j++) {
+      Serial.print(pixels[i][j] ? "1" : "0");
+    }
+    Serial.println();
   }
 }
 

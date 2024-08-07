@@ -20,6 +20,7 @@ E L F Z E H N E U H R
 
 namespace deutsch
 {
+    void resetMatrix();
     bool showEsIst(uint8_t minutes);
     void turnPixelsOn(uint8_t start, uint8_t end, uint8_t row);
 
@@ -44,11 +45,12 @@ namespace deutsch
     void half();
     void uhr();
 
-    static std::array<std::array<bool, 11>, 11> matrix = {false};
+    std::array<std::array<bool, 11>, 11> matrix = {false};
 
     // converts time into matrix
     std::array<std::array<bool, 11>, 11> timeToMatrix(time_t time)
     {
+        resetMatrix();
         uint8_t hours = hour(time);
         uint8_t minutes = minute(time);
 
@@ -215,7 +217,10 @@ namespace deutsch
         }
 
         // pixels for minutes in additional row
-        turnPixelsOn(0, (minutes % 5) - 1, 10);
+        for (byte i = 1; i <= minutes % 5; i++)
+        {
+            matrix[10][i - 1] = true;
+        }
 
         Serial.print(" + ");
         Serial.print(minutes % 5);
@@ -223,6 +228,14 @@ namespace deutsch
         Serial.println();
 
         return matrix;
+    }
+
+    void resetMatrix()
+    {
+        for (auto &row : matrix)
+        {
+            row.fill(false);
+        }
     }
 
     // determine if "es ist" is shown
@@ -238,7 +251,7 @@ namespace deutsch
     {
         for (uint8_t i = start; i <= end; i++)
         {
-            matrix[i][row] = true;
+            matrix[row][i] = true;
         }
     }
 
