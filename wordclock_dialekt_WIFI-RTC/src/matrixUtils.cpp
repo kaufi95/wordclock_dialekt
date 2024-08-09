@@ -9,7 +9,7 @@ bool showEsIst(uint8_t minutes)
 }
 
 // reset matrix
-void resetMatrix(std::array<std::array<bool, 11>, 11> matrix)
+void resetMatrix(std::array<std::array<bool, 11>, 11> &matrix)
 {
     for (auto &row : matrix)
     {
@@ -18,7 +18,7 @@ void resetMatrix(std::array<std::array<bool, 11>, 11> matrix)
 }
 
 // turn on pixels in matrix
-void turnPixelsOn(uint8_t start, uint8_t end, uint8_t row, std::array<std::array<bool, 11>, 11> matrix)
+void turnPixelsOn(uint8_t start, uint8_t end, uint8_t row, std::array<std::array<bool, 11>, 11> &matrix)
 {
     for (uint8_t i = start; i <= end; i++)
     {
@@ -27,7 +27,7 @@ void turnPixelsOn(uint8_t start, uint8_t end, uint8_t row, std::array<std::array
 }
 
 // pixels for minutes in additional row
-void turnPixelsOnMinutes(uint8_t start, uint8_t end, uint8_t row, std::array<std::array<bool, 11>, 11> matrix)
+void turnPixelsOnMinutes(uint8_t start, uint8_t end, uint8_t row, std::array<std::array<bool, 11>, 11> &matrix)
 {
     for (uint8_t i = start; i < end; i++)
     {
