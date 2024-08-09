@@ -26,37 +26,38 @@
 #define HTTP_PORT 80
 
 // define pins
-#define NEOPIXEL_PIN 4  // define pin for Neopixels
+#define NEOPIXEL_PIN 4 // define pin for Neopixels
 
 // define parameters
-#define WIDTH 11   // width of LED matirx
-#define HEIGHT 11  // height of LED matrix + additional row for minute leds
+#define WIDTH 11  // width of LED matirx
+#define HEIGHT 11 // height of LED matrix + additional row for minute leds
 
 #define SETTINGS_FILE "/settings.json"
 
 #define FORMAT_LITTLEFS_IF_FAILED true
 
-struct Config {
-  uint16_t color;      // color
-  uint8_t brightness;  // brightness
-  String language;     // language
-  bool ntp;            // ntp
-  String ssid;         // ssid
-  String pw;           // password
+struct Config
+{
+  uint16_t color;     // color
+  uint8_t brightness; // brightness
+  String language;    // language
+  bool ntp;           // ntp
+  String ssid;        // ssid
+  String pw;          // password
 };
 
-String WiFiStates[] = { "NO SHIELD",
-                        "STOPPED",
-                        "IDLE STATUS",
-                        "NO SSID AVAILABLE",
-                        "SCAN COMPLETED",
-                        "CONNECTED",
-                        "CONNECT FAILED",
-                        "CONNECTION LOST",
-                        "DISCONNECTED" };
+String WiFiStates[] = {"NO SHIELD",
+                       "STOPPED",
+                       "IDLE STATUS",
+                       "NO SSID AVAILABLE",
+                       "SCAN COMPLETED",
+                       "CONNECTED",
+                       "CONNECT FAILED",
+                       "CONNECTION LOST",
+                       "DISCONNECTED"};
 
 // create config object and set default values
-Config config = { 65535, 128, "dialekt", false, "", "" };
+Config config = {65535, 128, "dialekt", false, "", ""};
 
 uint8_t lastMin;
 bool reconnect;
@@ -80,11 +81,12 @@ Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(WIDTH, HEIGHT, NEOPIXEL_PIN,
                                                NEO_GRB + NEO_KHZ800);
 
 // define time change rules and timezone
-TimeChangeRule atST = { "ST", Last, Sun, Mar, 2, 120 };  // UTC + 2 hours
-TimeChangeRule atRT = { "RT", Last, Sun, Oct, 3, 60 };   // UTC + 1 hour
+TimeChangeRule atST = {"ST", Last, Sun, Mar, 2, 120}; // UTC + 2 hours
+TimeChangeRule atRT = {"RT", Last, Sun, Oct, 3, 60};  // UTC + 1 hour
 Timezone AT(atST, atRT);
 
-void setup() {
+void setup()
+{
 
   // enable serial output
   Serial.begin(115200);
@@ -93,15 +95,13 @@ void setup() {
   Serial.println("by kaufi95");
 
   // initialize LittleFS
-  if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+  if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED))
+  {
     Serial.println("File system mount failed...");
   }
   Serial.println("File system mounted");
 
   delay(1000);
-
-  Serial.println("default settings");
-  printSettings();
 
   // load stored values
   Serial.println("reading settings from file");
@@ -121,11 +121,11 @@ void setup() {
   server.on("/", HTTP_GET, handleConnect);
   server.on("/status", HTTP_GET, handleStatus);
 
-  server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+                       {
     if (request->url() == "/update") {
       handleUpdate(request, data);
-    }
-  });
+    } });
 
   // serve static files
   server.serveStatic("/index.html", LittleFS, "/index.html");
@@ -133,16 +133,17 @@ void setup() {
   server.serveStatic("/styles.css", LittleFS, "/styles.css");
 
   // Handle Web Server Events
-  events.onConnect([](AsyncEventSourceClient *client) {
+  events.onConnect([](AsyncEventSourceClient *client)
+                   {
     if (client->lastId()) {
       Serial.printf("Client reconnected! Last message ID that it got is: %u\n", client->lastId());
-    }
-  });
+    } });
   server.addHandler(&events);
 
   Serial.println("Handlers set and files served");
 
-  if (!MDNS.begin(DNSName)) {
+  if (!MDNS.begin(DNSName))
+  {
     Serial.println("Error setting up MDNS responder!");
   }
   Serial.println("mDNS responder started");
@@ -150,12 +151,14 @@ void setup() {
   MDNS.addService("http", "tcp", 80);
 
   // initializing rtc
-  if (!rtc.begin()) {
+  if (!rtc.begin())
+  {
     Serial.println("Error setting up RTC");
   }
   Serial.println("RTC initialized");
 
-  if (rtc.lostPower()) {
+  if (rtc.lostPower())
+  {
     rtc.adjust(DateTime(2024, 1, 1, 0, 0, 0));
   }
 
@@ -169,15 +172,16 @@ void setup() {
   matrix.show();
 }
 
-void loop() {
+void loop()
+{
   updateTime();
   displayTime();
   refreshMatrix(false);
-
   delay(15000);
 }
 
-void displayTime() {
+void displayTime()
+{
   time_t timeRTC = generateTimeByRTC();
   displayTimeInfo(timeRTC, "RTC");
 
@@ -185,17 +189,21 @@ void displayTime() {
   displayTimeInfo(timeAT, "AT");
 }
 
-void updateTime() {
+void updateTime()
+{
   events.send(WiFiStates[WiFi.status()].c_str(), "status", millis());
-  if (!config.ntp) {
+  if (!config.ntp)
+  {
     return;
   }
   setupWiFi();
   timeClient.update();
-  if (timeClient.isTimeSet()) {
+  if (timeClient.isTimeSet())
+  {
     time_t time_ntp = timeClient.getEpochTime();
     time_t time_rtc = generateTimeByRTC();
-    if (abs(time_ntp - time_rtc) > 30) {
+    if (abs(time_ntp - time_rtc) > 30)
+    {
       rtc.adjust(time_ntp);
     }
     time_t timeNTP = timeClient.getEpochTime();
@@ -203,7 +211,8 @@ void updateTime() {
   }
 }
 
-void printSettings() {
+void printSettings()
+{
   Serial.println("Color:\t" + String(config.color));
   Serial.println("Bright:\t" + String(config.brightness));
   Serial.println("Lang:\t" + config.language);
@@ -215,16 +224,20 @@ void printSettings() {
 // ------------------------------------------------------------
 // wifi
 
-void setupWiFi() {
-  if (WiFi.status() == WL_CONNECTED && !reconnect) {
+void setupWiFi()
+{
+  if (WiFi.status() == WL_CONNECTED && !reconnect)
+  {
     Serial.println("WiFi already connected");
     return;
   }
 
-  if (!config.ntp) {
+  if (!config.ntp)
+  {
     WiFi.mode(WIFI_AP_STA);
     Serial.println("WiFi AP starting...");
-    while (!WiFi.softAP(AP_SSID)) {
+    while (!WiFi.softAP(AP_SSID))
+    {
       Serial.println("WiFi AP not started yet...");
       delay(1000);
     }
@@ -232,7 +245,8 @@ void setupWiFi() {
     Serial.println(WiFi.softAPIP());
   }
 
-  if (config.ntp) {
+  if (config.ntp)
+  {
     Serial.println("Connecting to WiFi network");
 
     Serial.print("WIFI SETUP: SSID: ");
@@ -242,12 +256,15 @@ void setupWiFi() {
 
     WiFi.begin(config.ssid.c_str(), config.pw.c_str());
 
-    if (WiFi.status() == WL_CONNECTED) {
+    if (WiFi.status() == WL_CONNECTED)
+    {
       Serial.println("Connected to WiFi network");
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
       WiFi.softAPdisconnect(true);
-    } else {
+    }
+    else
+    {
       Serial.println("Failed to connect to WiFi network");
     }
   }
@@ -256,15 +273,18 @@ void setupWiFi() {
 // ------------------------------------------------------------
 // webserver
 
-void handleNotFound(AsyncWebServerRequest *request) {
+void handleNotFound(AsyncWebServerRequest *request)
+{
   request->redirect("/index.html");
 }
 
-void handleConnect(AsyncWebServerRequest *request) {
+void handleConnect(AsyncWebServerRequest *request)
+{
   request->redirect("/index.html");
 }
 
-void handleStatus(AsyncWebServerRequest *request) {
+void handleStatus(AsyncWebServerRequest *request)
+{
   JsonDocument doc;
 
   doc["color"] = String(config.color);
@@ -276,36 +296,49 @@ void handleStatus(AsyncWebServerRequest *request) {
   doc["status"] = String(WiFiStates[WiFi.status()]);
 
   String response;
-  if (!serializeJson(doc, response)) {
+  if (!serializeJson(doc, response))
+  {
     Serial.println("Failed to create response!");
   }
 
   request->send(200, "application/json", response);
 }
 
-void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
+void handleUpdate(AsyncWebServerRequest *request, uint8_t *data)
+{
 
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, data);
 
-  if (error) {
+  if (error)
+  {
     Serial.println("Failed to deserialize json from update-request.");
     Serial.println(error.c_str());
     request->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
     return;
   }
 
-  if (doc["color"]) config.color = (uint16_t)String(doc["color"]).toInt();
-  if (doc["brightness"]) config.brightness = (uint8_t)String(doc["brightness"]).toInt();
-  if (doc["language"]) config.language = String(doc["language"]);
-  if (doc["ntp"]) config.ntp = (bool)String(doc["ntp"]);
+  if (doc["color"])
+    config.color = (uint16_t)String(doc["color"]).toInt();
+  if (doc["brightness"])
+    config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  if (doc["language"])
+    config.language = String(doc["language"]);
+  if (doc["ntp"])
+    config.ntp = (bool)String(doc["ntp"]);
 
-  if (config.ntp) {
+  if (config.ntp)
+  {
     String old_ssid = config.ssid;
-    if (doc["ssid"]) config.ssid = String(doc["ssid"]);
-    if (doc["pw"]) config.pw = String(doc["pw"]);
-    if (old_ssid != config.ssid) reconnect = true;
-  } else {
+    if (doc["ssid"])
+      config.ssid = String(doc["ssid"]);
+    if (doc["pw"])
+      config.pw = String(doc["pw"]);
+    if (old_ssid != config.ssid)
+      reconnect = true;
+  }
+  else
+  {
     time_t time = mapTime(String(doc["datetime"]).c_str());
     rtc.adjust(time);
   }
@@ -319,16 +352,19 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
   request->send(200, "text/plain", "ok");
 }
 
-time_t mapTime(const char *timestamp) {
+time_t mapTime(const char *timestamp)
+{
   return (time_t)strtoul(timestamp, NULL, 10);
 }
 
 // ------------------------------------------------------------
 // storage
 
-void loadSettings(const char *filename) {
+void loadSettings(const char *filename)
+{
   File file = LittleFS.open(filename, "r");
-  if (!file) {
+  if (!file)
+  {
     Serial.println("Failed to open file");
     return;
   }
@@ -336,7 +372,8 @@ void loadSettings(const char *filename) {
   JsonDocument doc;
 
   DeserializationError error = deserializeJson(doc, file);
-  if (error) {
+  if (error)
+  {
     Serial.println("Failed to read file");
     file.close();
     return;
@@ -352,11 +389,13 @@ void loadSettings(const char *filename) {
   file.close();
 }
 
-void storeSettings(const char *filename) {
+void storeSettings(const char *filename)
+{
   LittleFS.remove(filename);
 
   File file = LittleFS.open(filename, "w");
-  if (!file) {
+  if (!file)
+  {
     Serial.println("Failed to create file");
     return;
   }
@@ -370,7 +409,8 @@ void storeSettings(const char *filename) {
   doc["ssid"] = config.ssid;
   doc["pw"] = config.pw;
 
-  if (!serializeJson(doc, file)) {
+  if (!serializeJson(doc, file))
+  {
     Serial.println("Failed to write to file");
   }
 
@@ -382,7 +422,8 @@ void storeSettings(const char *filename) {
 // wordclock logic
 
 // generate time
-time_t generateTimeByRTC() {
+time_t generateTimeByRTC()
+{
   DateTime dt = rtc.now();
   tmElements_t tm;
   tm.Second = dt.second();
@@ -396,9 +437,11 @@ time_t generateTimeByRTC() {
 }
 
 // clears, generates and fills pixels
-void refreshMatrix(bool settingsChanged) {
+void refreshMatrix(bool settingsChanged)
+{
   time_t time = AT.toLocal(generateTimeByRTC());
-  if (lastMin != minute(time) || settingsChanged) {
+  if (lastMin != minute(time) || settingsChanged)
+  {
     matrix.fillScreen(0);
     fillMatrix(time);
     matrix.show();
@@ -407,33 +450,43 @@ void refreshMatrix(bool settingsChanged) {
 }
 
 // converts time into matrix
-void fillMatrix(time_t time) {
-  if (config.language == "dialekt") {
+void fillMatrix(time_t time)
+{
+  if (config.language == "dialekt")
+  {
     auto pixels = dialekt::timeToMatrix(time);
-    turnPixelsOn(pixels);
-    printMatrix(pixels);
+    drawPixelsOnMatrix(pixels);
+    printMatrixToSerial(pixels);
   }
-  if (config.language == "deutsch") {
+  if (config.language == "deutsch")
+  {
     auto pixels = deutsch::timeToMatrix(time);
-    turnPixelsOn(pixels);
-    printMatrix(pixels);
+    drawPixelsOnMatrix(pixels);
+    printMatrixToSerial(pixels);
   }
 }
 
 // turns the pixels from startIndex to endIndex of startIndex row on
-void turnPixelsOn(std::array<std::array<bool, 11>, 11> &pixels) {
-  for (uint8_t i = 0; i < 11; i++) {
-    for (uint8_t j = 0; j < 11; j++) {
-      if (pixels[i][j]) {
+void drawPixelsOnMatrix(std::array<std::array<bool, 11>, 11> &pixels)
+{
+  for (uint8_t i = 0; i < 11; i++)
+  {
+    for (uint8_t j = 0; j < 11; j++)
+    {
+      if (pixels[i][j])
+      {
         matrix.drawPixel(j, i, config.color);
       }
     }
   }
 }
 
-void printMatrix(std::array<std::array<bool, 11>, 11> &pixels) {
-  for (uint8_t i = 0; i < 11; i++) {
-    for (uint8_t j = 0; j < 11; j++) {
+void printMatrixToSerial(std::array<std::array<bool, 11>, 11> &pixels)
+{
+  for (uint8_t i = 0; i < 11; i++)
+  {
+    for (uint8_t j = 0; j < 11; j++)
+    {
       Serial.print(pixels[i][j] ? "1" : "0");
     }
     Serial.println();
@@ -444,7 +497,8 @@ void printMatrix(std::array<std::array<bool, 11>, 11> &pixels) {
 // serial output
 
 // display details of gps signal
-void displayTimeInfo(time_t t, String component) {
+void displayTimeInfo(time_t t, String component)
+{
 
   Serial.print(component + "\t: ");
 
