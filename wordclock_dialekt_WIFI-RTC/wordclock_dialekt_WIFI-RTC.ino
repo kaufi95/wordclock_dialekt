@@ -15,22 +15,19 @@
 #include "src/dialekt.h"
 #include "src/deutsch.h"
 
-// define WiFi settings
-#define SSID "WordClock"
+// define WiFi params
+#define AP_SSID "WordClock"
+#define AP_TIMEOUT 600000  // milliseconds
 #define DNSName "wordclock"
-
-// define ports
 #define HTTP_PORT 80
 
-// define pins
+// define matrix params
+#define WIDTH 11        // width of LED matirx
+#define HEIGHT 11       // height of LED matrix + additional row for minute leds
 #define NEOPIXEL_PIN 4  // define pin for Neopixels
 
-// define parameters
-#define WIDTH 11   // width of LED matirx
-#define HEIGHT 11  // height of LED matrix + additional row for minute leds
-
+// fs
 #define SETTINGS_FILE "/settings.json"
-
 #define FORMAT_LITTLEFS_IF_FAILED true
 
 struct Config {
@@ -43,6 +40,7 @@ struct Config {
 Config config = { 65535, 128, "dialekt" };
 
 uint8_t lastMin;
+bool APRunning;
 
 // create RTC object
 RTC_DS3231 rtc;
@@ -65,7 +63,7 @@ void setup() {
   // enable serial output
   Serial.begin(115200);
   Serial.println("WordClock");
-  Serial.println("version 3.0");
+  Serial.println("version 3.1");
   Serial.println("by kaufi95");
 
   // initialize LittleFS
@@ -82,14 +80,97 @@ void setup() {
 
   printSettings();
 
+  startWiFi();
+  startServer();
+
+  startRTC();
+  startMatrix();
+}
+
+void loop() {
+  displayTime();
+  refreshMatrix(false);
+  if (APRunning && millis() > AP_TIMEOUT) stopWiFi();
+  delay(15000);
+}
+
+void displayTime() {
+  time_t timeRTC = generateTimeByRTC();
+  displayTimeInfo(timeRTC, "RTC");
+
+  time_t timeAT = AT.toLocal(timeRTC);
+  displayTimeInfo(timeAT, "AT");
+}
+
+void printSettings() {
+  Serial.println("Color:\t" + String(config.color));
+  Serial.println("Bright:\t" + String(config.brightness));
+  Serial.println("Lang:\t" + config.language);
+}
+
+// ------------------------------------------------------------
+// matrix
+
+void startMatrix() {
+  // init LED matrix
+  Serial.println("initiating matrix");
+  matrix.begin();
+  matrix.setBrightness(config.brightness);
+  matrix.fillScreen(0);
+  matrix.show();
+}
+
+// ------------------------------------------------------------
+// rtc
+
+void startRTC() {
+  // initializing rtc
+  if (!rtc.begin()) {
+    Serial.println("Error setting up RTC");
+  }
+  if (rtc.lostPower()) {
+    rtc.adjust(DateTime(2024, 1, 1, 0, 0, 0));
+  }
+
+  Serial.println("RTC initialized");
+}
+
+// ------------------------------------------------------------
+// wifi
+
+void startWiFi() {
   // setup WiFI
-  while (!WiFi.softAP(SSID)) {
+  while (!WiFi.softAP(AP_SSID)) {
     Serial.println("WiFi AP not started yet...");
     delay(1000);
   }
+  APRunning = true;
   Serial.print("AP IP address: ");
   Serial.println(WiFi.softAPIP());
 
+  if (!MDNS.begin(DNSName)) {
+    Serial.println("Error setting up MDNS responder!");
+  }
+  MDNS.addService("http", "tcp", 80);
+  Serial.println("mDNS responder started");
+}
+
+void stopWiFi() {
+  if (APRunning && WiFi.softAPgetStationNum() == 0) {
+    Serial.println("Stopping MDNS and WiFi.");
+    stopServer();
+    MDNS.end();
+    WiFi.mode(WIFI_OFF);
+    APRunning = false;
+  } else {
+    Serial.println("Attempt to stop WiFi failed; Client(s) still connected");
+  }
+}
+
+// ------------------------------------------------------------
+// webserver
+
+void startServer() {
   // start server
   server.begin();
   Serial.println("AsyncWebServer started");
@@ -111,54 +192,12 @@ void setup() {
   server.serveStatic("/styles.css", LittleFS, "/styles.css");
 
   Serial.println("Handlers set and files served");
-
-  if (!MDNS.begin(DNSName)) {
-    Serial.println("Error setting up MDNS responder!");
-  }
-  Serial.println("mDNS responder started");
-
-  MDNS.addService("http", "tcp", 80);
-
-  // initializing rtc
-  if (!rtc.begin()) {
-    Serial.println("Error setting up RTC");
-  }
-  Serial.println("RTC initialized");
-
-  if (rtc.lostPower()) {
-    rtc.adjust(DateTime(2024, 1, 1, 0, 0, 0));
-  }
-
-  // init LED matrix
-  Serial.println("initiating matrix");
-  matrix.begin();
-  matrix.setBrightness(config.brightness);
-  matrix.fillScreen(0);
-  matrix.show();
 }
 
-void loop() {
-  displayTime();
-  refreshMatrix(false);
-  delay(15000);
+void stopServer() {
+  Serial.println("Stopping WebServer");
+  server.end();
 }
-
-void displayTime() {
-  time_t timeRTC = generateTimeByRTC();
-  displayTimeInfo(timeRTC, "RTC");
-
-  time_t timeAT = AT.toLocal(timeRTC);
-  displayTimeInfo(timeAT, "AT");
-}
-
-void printSettings() {
-  Serial.println("Color:\t" + String(config.color));
-  Serial.println("Bright:\t" + String(config.brightness));
-  Serial.println("Lang:\t" + config.language);
-}
-
-// ------------------------------------------------------------
-// webserver
 
 void handleNotFound(AsyncWebServerRequest *request) {
   request->redirect("/index.html");
