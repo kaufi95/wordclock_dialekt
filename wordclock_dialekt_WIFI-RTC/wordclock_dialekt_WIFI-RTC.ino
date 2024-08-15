@@ -324,24 +324,22 @@ void refreshMatrix(bool settingsChanged) {
   time_t time = AT.toLocal(generateTimeByRTC());
   if (lastMin != minute(time) || settingsChanged) {
     matrix.fillScreen(0);
-    fillMatrix(time);
+    getPixels(time);
     matrix.show();
     lastMin = minute(time);
   }
 }
 
-// converts time into matrix
-void fillMatrix(time_t time) {
+// converts time into pixels
+void getPixels(time_t time) {
+  std::array<std::array<bool, 11>, 11> pixels = {false};
   if (config.language == "dialekt") {
-    auto pixels = dialekt::timeToMatrix(time);
-    drawPixelsOnMatrix(pixels);
-    printMatrixToSerial(pixels);
+    dialekt::timeToPixels(time, pixels);
   }
   if (config.language == "deutsch") {
-    auto pixels = deutsch::timeToMatrix(time);
-    drawPixelsOnMatrix(pixels);
-    printMatrixToSerial(pixels);
+    deutsch::timeToPixels(time, pixels);
   }
+  drawPixelsOnMatrix(pixels);
 }
 
 // turns the pixels from startIndex to endIndex of startIndex row on
@@ -353,9 +351,10 @@ void drawPixelsOnMatrix(std::array<std::array<bool, 11>, 11> &pixels) {
       }
     }
   }
+  printPixelsToSerial(pixels);
 }
 
-void printMatrixToSerial(std::array<std::array<bool, 11>, 11> &pixels) {
+void printPixelsToSerial(std::array<std::array<bool, 11>, 11> &pixels) {
   for (uint8_t i = 0; i < 11; i++) {
     for (uint8_t j = 0; j < 11; j++) {
       Serial.print(pixels[i][j] ? "1" : "0");

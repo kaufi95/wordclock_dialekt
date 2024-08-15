@@ -8,15 +8,6 @@ bool showEsIst(uint8_t minutes)
     return randomized || minutes % 30 < 5;
 }
 
-// reset matrix
-void resetMatrix(std::array<std::array<bool, 11>, 11> &matrix)
-{
-    for (auto &row : matrix)
-    {
-        row.fill(false);
-    }
-}
-
 // turn on pixels in matrix
 void turnPixelsOn(uint8_t start, uint8_t end, uint8_t row, std::array<std::array<bool, 11>, 11> &matrix)
 {

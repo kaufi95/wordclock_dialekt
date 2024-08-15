@@ -42,22 +42,22 @@ namespace deutsch
     void half();
     void uhr();
 
-    std::array<std::array<bool, 11>, 11> matrix = {false};
+    std::array<std::array<bool, 11>, 11> *matrix;
 
     // converts time into matrix
-    std::array<std::array<bool, 11>, 11> timeToMatrix(time_t time)
+    void timeToPixels(time_t time, std::array<std::array<bool, 11>, 11> &_matrix)
     {
+        matrix = &_matrix;
         uint8_t hours = hour(time);
         uint8_t minutes = minute(time);
-        resetMatrix(matrix);
 
         // show "Es ist" or "Es isch" randomized
         if (showEsIst(minutes))
         {
             // Es ist
             Serial.print("Es ist ");
-            turnPixelsOn(1, 2, 0, matrix);
-            turnPixelsOn(5, 7, 0, matrix);
+            turnPixelsOn(1, 2, 0, *matrix);
+            turnPixelsOn(5, 7, 0, *matrix);
         }
 
         // show minutes
@@ -213,14 +213,12 @@ namespace deutsch
             uhr();
         }
 
-        turnPixelsOnMinutes(0, minutes % 5, 10, matrix);
+        turnPixelsOnMinutes(0, minutes % 5, 10, *matrix);
 
         Serial.print(" + ");
         Serial.print(minutes % 5);
         Serial.print(" min");
         Serial.println();
-
-        return matrix;
     }
 
     // ------------------------------------------------------------
@@ -232,12 +230,12 @@ namespace deutsch
         if (s)
         {
             Serial.print("eins");
-            turnPixelsOn(7, 10, 4, matrix);
+            turnPixelsOn(7, 10, 4, *matrix);
         }
         else
         {
             Serial.print("ein");
-            turnPixelsOn(7, 9, 4, matrix);
+            turnPixelsOn(7, 9, 4, *matrix);
         }
     }
 
@@ -245,105 +243,105 @@ namespace deutsch
     {
         // zwoa/zwei
         Serial.print("zwei");
-        turnPixelsOn(5, 8, 4, matrix);
+        turnPixelsOn(5, 8, 4, *matrix);
     }
 
     void hour_three()
     {
         // drei
         Serial.print("drei");
-        turnPixelsOn(0, 3, 5, matrix);
+        turnPixelsOn(0, 3, 5, *matrix);
     }
 
     void hour_four()
     {
         // vier/e/vier
         Serial.print("vier");
-        turnPixelsOn(0, 3, 8, matrix);
+        turnPixelsOn(0, 3, 8, *matrix);
     }
 
     void hour_five()
     {
         // fünfe/fünf
         Serial.print("fünf");
-        turnPixelsOn(0, 3, 7, matrix);
+        turnPixelsOn(0, 3, 7, *matrix);
     }
 
     void min_five()
     {
         // fünf/fünf
         Serial.print("fünf");
-        turnPixelsOn(0, 3, 1, matrix);
+        turnPixelsOn(0, 3, 1, *matrix);
     }
 
     void hour_six()
     {
         // sechse/sechs
         Serial.print("sechs");
-        turnPixelsOn(5, 9, 5, matrix);
+        turnPixelsOn(5, 9, 5, *matrix);
     }
 
     void hour_seven()
     {
         // siebne/sieben
         Serial.print("sieben");
-        turnPixelsOn(0, 5, 6, matrix);
+        turnPixelsOn(0, 5, 6, *matrix);
     }
 
     void hour_eight()
     {
         // achte/acht
         Serial.print("acht");
-        turnPixelsOn(6, 9, 7, matrix);
+        turnPixelsOn(6, 9, 7, *matrix);
     }
 
     void hour_nine()
     {
         // nüne/neun
         Serial.print("neun");
-        turnPixelsOn(7, 10, 6, matrix);
+        turnPixelsOn(7, 10, 6, *matrix);
     }
 
     void hour_ten()
     {
         // zehne/zehn
         Serial.print("zehn");
-        turnPixelsOn(3, 6, 9, matrix);
+        turnPixelsOn(3, 6, 9, *matrix);
     }
 
     void min_ten()
     {
         // zehn/zehn
         Serial.print("zehn");
-        turnPixelsOn(7, 10, 2, matrix);
+        turnPixelsOn(7, 10, 2, *matrix);
     }
 
     void hour_eleven()
     {
         // elfe/elf
         Serial.print("elf");
-        turnPixelsOn(0, 2, 9, matrix);
+        turnPixelsOn(0, 2, 9, *matrix);
     }
 
     void hour_twelve()
     {
         // zwölfe/zwölf
         Serial.print("zwölf");
-        turnPixelsOn(5, 9, 8, matrix);
+        turnPixelsOn(5, 9, 8, *matrix);
     }
 
     void quarter()
     {
         // viertel
         Serial.print("viertel");
-        turnPixelsOn(0, 6, 2, matrix);
+        turnPixelsOn(0, 6, 2, *matrix);
     }
 
     void twenty()
     {
         // zwanzig
         Serial.print("zwanzig");
-        turnPixelsOn(4, 10, 1, matrix);
+        turnPixelsOn(4, 10, 1, *matrix);
     }
 
     // ------------------------------------------------------------
@@ -352,27 +350,27 @@ namespace deutsch
     {
         // vor/vor
         Serial.print("vor");
-        turnPixelsOn(1, 3, 3, matrix);
+        turnPixelsOn(1, 3, 3, *matrix);
     }
 
     void after()
     {
         // noch/nach
         Serial.print("nach");
-        turnPixelsOn(5, 8, 3, matrix);
+        turnPixelsOn(5, 8, 3, *matrix);
     }
 
     void half()
     {
         // halb
         Serial.print("halb");
-        turnPixelsOn(0, 3, 4, matrix);
+        turnPixelsOn(0, 3, 4, *matrix);
     }
 
     void uhr()
     {
         Serial.print(" uhr");
-        turnPixelsOn(8, 10, 9, matrix);
+        turnPixelsOn(8, 10, 9, *matrix);
     }
 
 } // namespace deutsch
