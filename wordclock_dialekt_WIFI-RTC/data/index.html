@@ -33,18 +33,16 @@
         <label for="b-high">High</label>
       </div>
 
-      <p>Terminate WiFi?</p>
-      <div id="timeout-container">
-        <input type="radio" id="timeout-0" name="timeout" value="0" />
-        <label for="timeout-0">Never</label>
-        <input type="radio" id="timeout-10" name="timeout" value="1" />
-        <label for="timeout-10">10min</label>
+      <p>Terminate WiFi Access Point?</p>
+      <div class="form-group">
+        <label for="termination">Activated:</label>
+        <input type="checkbox" id="termination" value="true" />
       </div>
 
-      <p>NTP:</p>
+      <p>Sync Time over WiFi:</p>
       <div class="form-group">
         <label for="ntp">Activated:</label>
-        <input type="checkbox" id="ntp" name="ntp" value="true" />
+        <input type="checkbox" id="ntp" value="true" />
       </div>
       <div id="ntp-container">
         <div id="wifi" style="display: none">

@@ -2,9 +2,9 @@ const colorPicker = document.getElementById('color-picker');
 
 const languageButtons = document.querySelectorAll('input[name="language"]');
 const brightnessButtons = document.querySelectorAll('input[name="brightness"]');
-const timeoutButtons = document.querySelectorAll('input[name="timeout"]');
-const wifi_div = document.getElementById('wifi');
+const termination_input = document.getElementById('termination');
 
+const wifi_div = document.getElementById('wifi');
 const ntp_input = document.getElementById('ntp');
 const ssid_input = document.getElementById('ssid');
 const pw_input = document.getElementById('pw');
@@ -61,7 +61,7 @@ function updateUI(data) {
   updateColor(data.color);
   updateLanguage(data.language);
   updateBrightness(data.brightness);
-  updateTimeout(data.timeout);
+  updateTermination(data.termination);
   updateSSID(data.ssid);
   updatePW('');
   updateStatus(data.status);
@@ -89,12 +89,8 @@ function updateBrightness(brightness) {
   });
 }
 
-function updateTimeout(timeout) {
-  timeoutButtons.forEach((button) => {
-    if (button.value === timeout) {
-      button.checked = true;
-    }
-  });
+function updateTermination(termination) {
+  termination_input.checked = termination;
 }
 
 function updateSSID(ssid) {
@@ -110,7 +106,7 @@ function updateStatus(status) {
 }
 
 function updateNTP(ntp) {
-  ntp_input.checked = ntp !== '0';
+  ntp_input.checked = ntp;
   // wifi_div.style.display = ntp ? 'block' : 'none';
 }
 
@@ -138,14 +134,12 @@ function getSelectedBrightness() {
   return selectedBrightness;
 }
 
-function getSelectedTimeout() {
-  let selectedTimeout = '';
-  timeoutButtons.forEach((button) => {
-    if (button.checked) {
-      selectedTimeout = button.value;
-    }
-  });
-  return selectedTimeout;
+function getTermination() {
+  return termination_input.checked;
+}
+
+function getNTP() {
+  return ntp_input.checked;
 }
 
 function getSSID() {
@@ -176,8 +170,8 @@ function sendPostRequest() {
   const color = getSelectedColor();
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
-  const timeout = getSelectedTimeout();
-  const ntp = ntp_input.checked;
+  const termination = getTermination();
+  const ntp = getNTP();
   const ssid = getSSID();
   const pw = getPW();
 
@@ -197,8 +191,8 @@ function sendPostRequest() {
     body.brightness = brightness;
   }
 
-  if (timeout !== '') {
-    body.timeout = timeout;
+  if (termination) {
+    body.termination = termination;
   }
 
   if (ntp) {
