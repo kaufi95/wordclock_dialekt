@@ -30,7 +30,7 @@ function updateLanguage(language) {
 
 function updateBrightness(brightness) {
   brightnessButtons.forEach((button) => {
-    if (button.value === brightness) {
+    if (button.value === brightness.toString()) {
       button.checked = true;
     }
   });
@@ -91,7 +91,7 @@ function sendPostRequest() {
   const termination = getTermination();
 
   const body = {
-    datetime: new Date().valueOf().toString().slice(0, -3),
+    datetime: Math.round(new Date().getTime() / 1000),
     color: color,
     language: language,
     brightness: brightness,

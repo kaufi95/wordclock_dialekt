@@ -15,6 +15,8 @@
 #include "src/dialekt.h"
 #include "src/deutsch.h"
 
+#define VERSION "3.2"
+
 // define WiFi params
 #define AP_SSID "WordClock"
 #define AP_TIMEOUT 600000  // milliseconds
@@ -34,7 +36,7 @@ struct Config {
   uint16_t color;      // color
   uint8_t brightness;  // brightness
   String language;     // language
-  bool termination;
+  bool termination;    // terminate WiFi after 10 min
 };
 
 // create config object and set default values
@@ -65,20 +67,10 @@ void setup() {
   // enable serial output
   Serial.begin(115200);
   Serial.println("WordClock");
-  Serial.println("version 3.1");
+  Serial.println("v" + VERSION);
   Serial.println("by kaufi95");
 
-  // initialize LittleFS
-  if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
-    Serial.println("File system mount failed...");
-  }
-  Serial.println("File system mounted");
-
-  delay(1000);
-
-  // load stored values
-  Serial.println("reading settings from file");
-  loadSettings(SETTINGS_FILE);
+  startFS();
 
   startWiFi();
   startServer();
@@ -243,8 +235,8 @@ void handleConnect(AsyncWebServerRequest *request) {
 void handleStatus(AsyncWebServerRequest *request) {
   JsonDocument doc;
 
-  doc["color"] = String(config.color);
-  doc["brightness"] = String(config.brightness);
+  doc["color"] = config.color;
+  doc["brightness"] = config.brightness;
   doc["language"] = config.language;
   doc["termination"] = config.termination;
 
@@ -268,10 +260,9 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
     return;
   }
 
-  time_t time = mapTime(String(doc["datetime"]).c_str());
-  rtc.adjust(time);
-  config.color = (uint16_t)String(doc["color"]).toInt();
-  config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  rtc.adjust((time_t)doc["datetime"]);
+  config.color = (uint16_t)doc["color"];
+  config.brightness = (uint8_t)doc["brightness"];
   config.language = String(doc["language"]);
   config.termination = (bool)doc["termination"];
 
@@ -280,12 +271,21 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
   request->send(200, "text/plain", "ok");
 }
 
-time_t mapTime(const char *timestamp) {
-  return (time_t)strtoul(timestamp, NULL, 10);
-}
-
 // ------------------------------------------------------------
 // storage
+
+void startFS() {
+  // initialize LittleFS
+  while (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED)) {
+    Serial.println("File system mount failed...");
+    delay(1000);
+  }
+  Serial.println("File system mounted");
+
+  // load stored values
+  Serial.println("reading settings from file");
+  loadSettings(SETTINGS_FILE);
+}
 
 void loadSettings(const char *filename) {
   File file = LittleFS.open(filename, "r");
@@ -303,8 +303,8 @@ void loadSettings(const char *filename) {
     return;
   }
 
-  config.color = (uint16_t)String(doc["color"]).toInt();
-  config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  config.color = (uint16_t)doc["color"];
+  config.brightness = (uint8_t)doc["brightness"];
   config.language = String(doc["language"]);
   config.termination = (bool)doc["termination"];
 
@@ -324,8 +324,8 @@ void storeSettings(const char *filename) {
 
   JsonDocument doc;
 
-  doc["color"] = String(config.color);
-  doc["brightness"] = String(config.brightness);
+  doc["color"] = config.color;
+  doc["brightness"] = config.brightness;
   doc["language"] = config.language;
   doc["termination"] = config.termination;
 

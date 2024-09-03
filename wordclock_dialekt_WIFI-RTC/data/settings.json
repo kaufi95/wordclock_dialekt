@@ -1,6 +1,6 @@
 {
-  "color": "65535",
+  "color": 65535,
   "language": "dialekt",
-  "brightness": "128",
+  "brightness": 128,
   "termination": true
 }
