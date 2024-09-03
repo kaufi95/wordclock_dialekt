@@ -33,12 +33,10 @@
         <label for="b-high">High</label>
       </div>
 
-      <p>Terminate WiFi?</p>
-      <div id="timeout-container">
-        <input type="radio" id="timeout-0" name="timeout" value="0" />
-        <label for="timeout-0">Never</label>
-        <input type="radio" id="timeout-10" name="timeout" value="1" />
-        <label for="timeout-10">10min</label>
+      <p>Terminate WiFi AP?</p>
+      <div class="form-group">
+        <label for="termination">Activated:</label>
+        <input type="checkbox" id="termination" value="true" />
       </div>
 
       <button id="update-btn" onclick="sendPostRequest()">Update</button>

@@ -2,7 +2,7 @@ const colorPicker = document.getElementById('color-picker');
 
 const languageButtons = document.querySelectorAll('input[name="language"]');
 const brightnessButtons = document.querySelectorAll('input[name="brightness"]');
-const timeoutButtons = document.querySelectorAll('input[name="timeout"]');
+const termination_input = document.getElementById('termination');
 
 document.addEventListener('DOMContentLoaded', () => {
   onLoad();
@@ -12,7 +12,7 @@ function updateUI(data) {
   updateColor(data.color);
   updateLanguage(data.language);
   updateBrightness(data.brightness);
-  updateTimeout(data.timeout);
+  updateTermination(data.termination);
 }
 
 function updateColor(color) {
@@ -36,12 +36,8 @@ function updateBrightness(brightness) {
   });
 }
 
-function updateTimeout(timeout) {
-  timeoutButtons.forEach((button) => {
-    if (button.value === timeout) {
-      button.checked = true;
-    }
-  });
+function updateTermination(termination) {
+  termination_input.checked = termination;
 }
 
 function getSelectedColor() {
@@ -68,14 +64,8 @@ function getSelectedBrightness() {
   return selectedBrightness;
 }
 
-function getSelectedTimeout() {
-  let selectedTimeout = '';
-  timeoutButtons.forEach((button) => {
-    if (button.checked) {
-      selectedTimeout = button.value;
-    }
-  });
-  return selectedTimeout;
+function getTermination() {
+  return termination_input.checked;
 }
 
 function onLoad() {
@@ -98,27 +88,15 @@ function sendPostRequest() {
   const color = getSelectedColor();
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
-  const timeout = getSelectedTimeout();
+  const termination = getTermination();
 
   const body = {
-    datetime: new Date().valueOf().toString().slice(0, -3)
+    datetime: new Date().valueOf().toString().slice(0, -3),
+    color: color,
+    language: language,
+    brightness: brightness,
+    termination: termination
   };
-
-  if (color !== '') {
-    body.color = color;
-  }
-
-  if (language !== '') {
-    body.language = language;
-  }
-
-  if (brightness !== '') {
-    body.brightness = brightness;
-  }
-
-  if (timeout !== '') {
-    body.timeout = timeout;
-  }
 
   fetch('http://' + window.location.host + '/update', {
     method: 'POST',

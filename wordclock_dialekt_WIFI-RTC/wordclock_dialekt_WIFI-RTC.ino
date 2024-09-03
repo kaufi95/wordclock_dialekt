@@ -34,7 +34,7 @@ struct Config {
   uint16_t color;      // color
   uint8_t brightness;  // brightness
   String language;     // language
-  bool timeout;
+  bool termination;
 };
 
 // create config object and set default values
@@ -42,6 +42,7 @@ Config config = { 65535, 128, "dialekt", true };
 
 uint8_t lastMin;
 bool APRunning;
+bool update = false;
 
 // create RTC object
 RTC_DS3231 rtc;
@@ -79,20 +80,28 @@ void setup() {
   Serial.println("reading settings from file");
   loadSettings(SETTINGS_FILE);
 
-  printSettings();
-
   startWiFi();
   startServer();
+  startMDNS();
 
   startRTC();
   startMatrix();
 }
 
 void loop() {
+  updateSettings();
   displayTime();
   refreshMatrix(false);
   updateWiFi();
   delay(15000);
+}
+
+void updateSettings() {
+  if (!update) return;
+  matrix.setBrightness(config.brightness);
+  refreshMatrix(true);
+  storeSettings(SETTINGS_FILE);
+  update = false;
 }
 
 void displayTime() {
@@ -105,9 +114,9 @@ void displayTime() {
 
 void printSettings() {
   Serial.println("Color:\t\t" + String(config.color));
-  Serial.println("Bright:\t\t" + String(config.brightness));
+  Serial.println("Brightness:\t" + String(config.brightness));
   Serial.println("Language:\t" + config.language);
-  Serial.println("Timeout:\t" + String(config.timeout));
+  Serial.println("Termination:\t" + String(config.termination));
 }
 
 // ------------------------------------------------------------
@@ -142,7 +151,7 @@ void startRTC() {
 
 void updateWiFi() {
   if (!APRunning) return;
-  if (!config.timeout) return;
+  if (!config.termination) return;
   if (millis() < AP_TIMEOUT) return;
   terminateWiFi();
 }
@@ -156,13 +165,6 @@ void startWiFi() {
   APRunning = true;
   Serial.print("AP IP address: ");
   Serial.println(WiFi.softAPIP());
-
-  while (!MDNS.begin(DNSName)) {
-    Serial.println("mDNS responder not started yet...");
-    delay(1000);
-  }
-  MDNS.addService("http", "tcp", 80);
-  Serial.println("mDNS responder started");
 }
 
 void terminateWiFi() {
@@ -171,14 +173,31 @@ void terminateWiFi() {
     return;
   }
   if (WiFi.softAPgetStationNum() == 0) {
-    Serial.println("Terminating MDNS and WiFi.");
+    Serial.println("Terminating WiFi.");
     terminateServer();
-    MDNS.end();
+    terminateMDNS();
     WiFi.mode(WIFI_OFF);
     APRunning = false;
   } else {
     Serial.println("WiFi termination failed; Client(s) still connected");
   }
+}
+
+// ------------------------------------------------------------
+// mdns
+
+void startMDNS() {
+  while (!MDNS.begin(DNSName)) {
+    Serial.println("mDNS responder not started yet...");
+    delay(1000);
+  }
+  MDNS.addService("http", "tcp", 80);
+  Serial.println("mDNS responder started");
+}
+
+void terminateMDNS() {
+  Serial.println("Terminating mDNS.");
+  MDNS.end();
 }
 
 // ------------------------------------------------------------
@@ -227,7 +246,7 @@ void handleStatus(AsyncWebServerRequest *request) {
   doc["color"] = String(config.color);
   doc["brightness"] = String(config.brightness);
   doc["language"] = config.language;
-  doc["timeout"] = String(config.timeout);
+  doc["termination"] = config.termination;
 
   String response;
   if (!serializeJson(doc, response)) {
@@ -251,16 +270,12 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
 
   time_t time = mapTime(String(doc["datetime"]).c_str());
   rtc.adjust(time);
-  if (doc["color"]) config.color = (uint16_t)String(doc["color"]).toInt();
-  if (doc["brightness"]) config.brightness = (uint8_t)String(doc["brightness"]).toInt();
-  if (doc["language"]) config.language = String(doc["language"]);
-  if (doc["timeout"]) config.timeout = (bool)String(doc["timeout"]).toInt();
+  config.color = (uint16_t)String(doc["color"]).toInt();
+  config.brightness = (uint8_t)String(doc["brightness"]).toInt();
+  config.language = String(doc["language"]);
+  config.termination = (bool)doc["termination"];
 
-  matrix.setBrightness(config.brightness);
-  refreshMatrix(true);
-
-  storeSettings(SETTINGS_FILE);
-  printSettings();
+  update = true;
 
   request->send(200, "text/plain", "ok");
 }
@@ -291,9 +306,11 @@ void loadSettings(const char *filename) {
   config.color = (uint16_t)String(doc["color"]).toInt();
   config.brightness = (uint8_t)String(doc["brightness"]).toInt();
   config.language = String(doc["language"]);
-  config.timeout = (bool)String(doc["timeout"]).toInt();
+  config.termination = (bool)doc["termination"];
 
   file.close();
+
+  printSettings();
 }
 
 void storeSettings(const char *filename) {
@@ -310,7 +327,7 @@ void storeSettings(const char *filename) {
   doc["color"] = String(config.color);
   doc["brightness"] = String(config.brightness);
   doc["language"] = config.language;
-  doc["timeout"] = String(config.timeout);
+  doc["termination"] = config.termination;
 
   if (!serializeJson(doc, file)) {
     Serial.println("Failed to write to file");
@@ -318,6 +335,8 @@ void storeSettings(const char *filename) {
 
   // Close the file
   file.close();
+
+  printSettings();
 }
 
 // ------------------------------------------------------------

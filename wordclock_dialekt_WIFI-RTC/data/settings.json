@@ -2,5 +2,5 @@
   "color": "65535",
   "language": "dialekt",
   "brightness": "128",
-  "timeout": "1"
+  "termination": true
 }
