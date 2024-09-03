@@ -12,7 +12,6 @@
       <h1>WordClock Controller</h1>
       <p>Color:</p>
       <div id="color-picker-container">
-        <!-- <label for="color-picker">Select your favorite color:</label> -->
         <input name="color" type="color" id="color-picker" value="#FFFFFF" />
       </div>
 
@@ -32,6 +31,14 @@
         <label for="b-mid">Middle</label>
         <input type="radio" id="b-high" name="brightness" value="192" />
         <label for="b-high">High</label>
+      </div>
+
+      <p>Terminate WiFi?</p>
+      <div id="timeout-container">
+        <input type="radio" id="timeout-0" name="timeout" value="0" />
+        <label for="timeout-0">Never</label>
+        <input type="radio" id="timeout-10" name="timeout" value="1" />
+        <label for="timeout-10">10min</label>
       </div>
 
       <p>NTP:</p>

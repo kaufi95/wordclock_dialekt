@@ -41,12 +41,12 @@ namespace dialekt
     void after();
     void half();
 
-    std::array<std::array<bool, 11>, 11> matrix = {false};
+    std::array<std::array<bool, 11>, 11> *matrix;
 
     // converts time into matrix
-    std::array<std::array<bool, 11>, 11> timeToMatrix(time_t time)
+    void timeToPixels(time_t time, std::array<std::array<bool, 11>, 11> &_matrix)
     {
-        resetMatrix(matrix);
+        matrix = &_matrix;
         uint8_t hours = hour(time);
         uint8_t minutes = minute(time);
 
@@ -54,8 +54,8 @@ namespace dialekt
         if (showEsIst(minutes))
         {
             Serial.print("Es isch ");
-            turnPixelsOn(1, 2, 0, matrix);
-            turnPixelsOn(5, 8, 0, matrix);
+            turnPixelsOn(1, 2, 0, *matrix);
+            turnPixelsOn(5, 8, 0, *matrix);
         }
 
         // show minutes
@@ -199,14 +199,12 @@ namespace dialekt
             break;
         }
 
-        turnPixelsOnMinutes(0, minutes % 5, 10, matrix);
+        turnPixelsOnMinutes(0, minutes % 5, 10, *matrix);
 
         Serial.print(" + ");
         Serial.print(minutes % 5);
         Serial.print(" min");
         Serial.println();
-
-        return matrix;
     }
 
     // ------------------------------------------------------------
@@ -216,112 +214,112 @@ namespace dialekt
     {
         // oans/eins
         Serial.print("oans");
-        turnPixelsOn(7, 10, 4, matrix);
+        turnPixelsOn(7, 10, 4, *matrix);
     }
 
     void hour_two()
     {
         // zwoa/zwei
         Serial.print("zwoa");
-        turnPixelsOn(5, 8, 4, matrix);
+        turnPixelsOn(5, 8, 4, *matrix);
     }
 
     void hour_three()
     {
         // drei
         Serial.print("drei");
-        turnPixelsOn(0, 3, 5, matrix);
+        turnPixelsOn(0, 3, 5, *matrix);
     }
 
     void hour_four()
     {
         // vier/e/vier
         Serial.print("viere");
-        turnPixelsOn(0, 4, 8, matrix);
+        turnPixelsOn(0, 4, 8, *matrix);
     }
 
     void hour_five()
     {
         // fünfe/fünf
         Serial.print("fünfe");
-        turnPixelsOn(0, 4, 7, matrix);
+        turnPixelsOn(0, 4, 7, *matrix);
     }
 
     void min_five()
     {
         // fünf/fünf
         Serial.print("fünf");
-        turnPixelsOn(0, 3, 1, matrix);
+        turnPixelsOn(0, 3, 1, *matrix);
     }
 
     void hour_six()
     {
         // sechse/sechs
         Serial.print("sechse");
-        turnPixelsOn(5, 10, 5, matrix);
+        turnPixelsOn(5, 10, 5, *matrix);
     }
 
     void hour_seven()
     {
         // siebne/sieben
         Serial.print("siebne");
-        turnPixelsOn(0, 5, 6, matrix);
+        turnPixelsOn(0, 5, 6, *matrix);
     }
 
     void hour_eight()
     {
         // achte/acht
         Serial.print("achte");
-        turnPixelsOn(6, 10, 7, matrix);
+        turnPixelsOn(6, 10, 7, *matrix);
     }
 
     void hour_nine()
     {
         // nüne/neun
         Serial.print("nüne");
-        turnPixelsOn(7, 10, 6, matrix);
+        turnPixelsOn(7, 10, 6, *matrix);
     }
 
     void hour_ten()
     {
         // zehne/zehn
         Serial.print("zehne");
-        turnPixelsOn(6, 10, 8, matrix);
+        turnPixelsOn(6, 10, 8, *matrix);
     }
 
     void min_ten()
     {
         // zehn/zehn
         Serial.print("zehn");
-        turnPixelsOn(7, 10, 2, matrix);
+        turnPixelsOn(7, 10, 2, *matrix);
     }
 
     void hour_eleven()
     {
         // elfe/elf
         Serial.print("elfe");
-        turnPixelsOn(0, 3, 9, matrix);
+        turnPixelsOn(0, 3, 9, *matrix);
     }
 
     void hour_twelve()
     {
         // zwölfe/zwölf
         Serial.print("zwölfe");
-        turnPixelsOn(5, 10, 9, matrix);
+        turnPixelsOn(5, 10, 9, *matrix);
     }
 
     void quarter()
     {
         // viertel
         Serial.print("viertel");
-        turnPixelsOn(0, 6, 2, matrix);
+        turnPixelsOn(0, 6, 2, *matrix);
     }
 
     void twenty()
     {
         // zwanzig
         Serial.print("zwanzig");
-        turnPixelsOn(4, 10, 1, matrix);
+        turnPixelsOn(4, 10, 1, *matrix);
     }
 
     // ------------------------------------------------------------
@@ -330,21 +328,21 @@ namespace dialekt
     {
         // vor/vor
         Serial.print("vor");
-        turnPixelsOn(1, 3, 3, matrix);
+        turnPixelsOn(1, 3, 3, *matrix);
     }
 
     void after()
     {
         // noch/nach
         Serial.print("noch");
-        turnPixelsOn(5, 8, 3, matrix);
+        turnPixelsOn(5, 8, 3, *matrix);
     }
 
     void half()
     {
         // halb
         Serial.print("halb");
-        turnPixelsOn(0, 3, 4, matrix);
+        turnPixelsOn(0, 3, 4, *matrix);
     }
 
 } // namespace dialekt

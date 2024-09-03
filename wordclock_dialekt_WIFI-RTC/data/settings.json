@@ -2,6 +2,7 @@
   "color": "65535",
   "language": "dialekt",
   "brightness": "128",
+  "timeout": "1",
   "ntp": false,
   "ssid": "",
   "pw": ""
