@@ -25,3 +25,16 @@ void turnPixelsOnMinutes(uint8_t start, uint8_t end, uint8_t row, std::array<std
         matrix[row][i] = true;
     }
 }
+
+// prints pixels to serial
+void printPixelsToSerial(std::array<std::array<bool, 11>, 11> &pixels)
+{
+    for (uint8_t i = 0; i < 11; i++)
+    {
+        for (uint8_t j = 0; j < 11; j++)
+        {
+            Serial.print(pixels[i][j] ? "1" : "0");
+        }
+        Serial.println();
+    }
+}

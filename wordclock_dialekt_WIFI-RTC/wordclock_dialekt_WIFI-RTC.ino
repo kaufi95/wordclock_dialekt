@@ -332,7 +332,7 @@ void refreshMatrix(bool settingsChanged) {
 
 // converts time into pixels
 void getPixels(time_t time) {
-  std::array<std::array<bool, 11>, 11> pixels = {false};
+  std::array<std::array<bool, 11>, 11> pixels = { false };
   if (config.language == "dialekt") {
     dialekt::timeToPixels(time, pixels);
   }
@@ -351,16 +351,7 @@ void drawPixelsOnMatrix(std::array<std::array<bool, 11>, 11> &pixels) {
       }
     }
   }
-  printPixelsToSerial(pixels);
-}
-
-void printPixelsToSerial(std::array<std::array<bool, 11>, 11> &pixels) {
-  for (uint8_t i = 0; i < 11; i++) {
-    for (uint8_t j = 0; j < 11; j++) {
-      Serial.print(pixels[i][j] ? "1" : "0");
-    }
-    Serial.println();
-  }
+  // printPixelsToSerial(pixels);
 }
 
 // ------------------------------------------------------------
