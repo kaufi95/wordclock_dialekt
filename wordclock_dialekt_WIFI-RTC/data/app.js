@@ -1,11 +1,8 @@
 const colorPicker = document.getElementById('color-picker');
 
-const languageRadioButtons = document.querySelectorAll(
-  'input[name="language"]'
-);
-const brightnessRadioButtons = document.querySelectorAll(
-  'input[name="brightness"]'
-);
+const languageButtons = document.querySelectorAll('input[name="language"]');
+const brightnessButtons = document.querySelectorAll('input[name="brightness"]');
+const timeoutButtons = document.querySelectorAll('input[name="timeout"]');
 
 document.addEventListener('DOMContentLoaded', () => {
   onLoad();
@@ -15,6 +12,7 @@ function updateUI(data) {
   updateColor(data.color);
   updateLanguage(data.language);
   updateBrightness(data.brightness);
+  updateTimeout(data.timeout);
 }
 
 function updateColor(color) {
@@ -23,7 +21,7 @@ function updateColor(color) {
 }
 
 function updateLanguage(language) {
-  languageRadioButtons.forEach((button) => {
+  languageButtons.forEach((button) => {
     if (button.value === language) {
       button.checked = true;
     }
@@ -31,8 +29,16 @@ function updateLanguage(language) {
 }
 
 function updateBrightness(brightness) {
-  brightnessRadioButtons.forEach((button) => {
+  brightnessButtons.forEach((button) => {
     if (button.value === brightness) {
+      button.checked = true;
+    }
+  });
+}
+
+function updateTimeout(timeout) {
+  timeoutButtons.forEach((button) => {
+    if (button.value === timeout) {
       button.checked = true;
     }
   });
@@ -44,7 +50,7 @@ function getSelectedColor() {
 
 function getSelectedLanguage() {
   let selectedLanguage = '';
-  languageRadioButtons.forEach((button) => {
+  languageButtons.forEach((button) => {
     if (button.checked) {
       selectedLanguage = button.value;
     }
@@ -54,12 +60,22 @@ function getSelectedLanguage() {
 
 function getSelectedBrightness() {
   let selectedBrightness = '';
-  brightnessRadioButtons.forEach((button) => {
+  brightnessButtons.forEach((button) => {
     if (button.checked) {
       selectedBrightness = button.value;
     }
   });
   return selectedBrightness;
+}
+
+function getSelectedTimeout() {
+  let selectedTimeout = '';
+  timeoutButtons.forEach((button) => {
+    if (button.checked) {
+      selectedTimeout = button.value;
+    }
+  });
+  return selectedTimeout;
 }
 
 function onLoad() {
@@ -82,6 +98,7 @@ function sendPostRequest() {
   const color = getSelectedColor();
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
+  const timeout = getSelectedTimeout();
 
   const body = {
     datetime: new Date().valueOf().toString().slice(0, -3)
@@ -97,6 +114,10 @@ function sendPostRequest() {
 
   if (brightness !== '') {
     body.brightness = brightness;
+  }
+
+  if (timeout !== '') {
+    body.timeout = timeout;
   }
 
   fetch('http://' + window.location.host + '/update', {

@@ -34,10 +34,11 @@ struct Config {
   uint16_t color;      // color
   uint8_t brightness;  // brightness
   String language;     // language
+  bool timeout;
 };
 
 // create config object and set default values
-Config config = { 65535, 128, "dialekt" };
+Config config = { 65535, 128, "dialekt", true };
 
 uint8_t lastMin;
 bool APRunning;
@@ -90,7 +91,7 @@ void setup() {
 void loop() {
   displayTime();
   refreshMatrix(false);
-  if (APRunning && millis() > AP_TIMEOUT) stopWiFi();
+  updateWiFi();
   delay(15000);
 }
 
@@ -103,9 +104,10 @@ void displayTime() {
 }
 
 void printSettings() {
-  Serial.println("Color:\t" + String(config.color));
-  Serial.println("Bright:\t" + String(config.brightness));
-  Serial.println("Lang:\t" + config.language);
+  Serial.println("Color:\t\t" + String(config.color));
+  Serial.println("Bright:\t\t" + String(config.brightness));
+  Serial.println("Language:\t" + config.language);
+  Serial.println("Timeout:\t" + String(config.timeout));
 }
 
 // ------------------------------------------------------------
@@ -138,6 +140,13 @@ void startRTC() {
 // ------------------------------------------------------------
 // wifi
 
+void updateWiFi() {
+  if (!APRunning) return;
+  if (!config.timeout) return;
+  if (millis() < AP_TIMEOUT) return;
+  terminateWiFi();
+}
+
 void startWiFi() {
   // setup WiFI
   while (!WiFi.softAP(AP_SSID)) {
@@ -148,22 +157,27 @@ void startWiFi() {
   Serial.print("AP IP address: ");
   Serial.println(WiFi.softAPIP());
 
-  if (!MDNS.begin(DNSName)) {
-    Serial.println("Error setting up MDNS responder!");
+  while (!MDNS.begin(DNSName)) {
+    Serial.println("mDNS responder not started yet...");
+    delay(1000);
   }
   MDNS.addService("http", "tcp", 80);
   Serial.println("mDNS responder started");
 }
 
-void stopWiFi() {
-  if (APRunning && WiFi.softAPgetStationNum() == 0) {
-    Serial.println("Stopping MDNS and WiFi.");
-    stopServer();
+void terminateWiFi() {
+  if (!APRunning) {
+    Serial.println("WiFi already terminated...");
+    return;
+  }
+  if (WiFi.softAPgetStationNum() == 0) {
+    Serial.println("Terminating MDNS and WiFi.");
+    terminateServer();
     MDNS.end();
     WiFi.mode(WIFI_OFF);
     APRunning = false;
   } else {
-    Serial.println("Attempt to stop WiFi failed; Client(s) still connected");
+    Serial.println("WiFi termination failed; Client(s) still connected");
   }
 }
 
@@ -194,8 +208,8 @@ void startServer() {
   Serial.println("Handlers set and files served");
 }
 
-void stopServer() {
-  Serial.println("Stopping WebServer");
+void terminateServer() {
+  Serial.println("Terminating WebServer");
   server.end();
 }
 
@@ -213,6 +227,7 @@ void handleStatus(AsyncWebServerRequest *request) {
   doc["color"] = String(config.color);
   doc["brightness"] = String(config.brightness);
   doc["language"] = config.language;
+  doc["timeout"] = String(config.timeout);
 
   String response;
   if (!serializeJson(doc, response)) {
@@ -239,6 +254,7 @@ void handleUpdate(AsyncWebServerRequest *request, uint8_t *data) {
   if (doc["color"]) config.color = (uint16_t)String(doc["color"]).toInt();
   if (doc["brightness"]) config.brightness = (uint8_t)String(doc["brightness"]).toInt();
   if (doc["language"]) config.language = String(doc["language"]);
+  if (doc["timeout"]) config.timeout = (bool)String(doc["timeout"]).toInt();
 
   matrix.setBrightness(config.brightness);
   refreshMatrix(true);
@@ -275,6 +291,7 @@ void loadSettings(const char *filename) {
   config.color = (uint16_t)String(doc["color"]).toInt();
   config.brightness = (uint8_t)String(doc["brightness"]).toInt();
   config.language = String(doc["language"]);
+  config.timeout = (bool)String(doc["timeout"]).toInt();
 
   file.close();
 }
@@ -293,6 +310,7 @@ void storeSettings(const char *filename) {
   doc["color"] = String(config.color);
   doc["brightness"] = String(config.brightness);
   doc["language"] = config.language;
+  doc["timeout"] = String(config.timeout);
 
   if (!serializeJson(doc, file)) {
     Serial.println("Failed to write to file");
