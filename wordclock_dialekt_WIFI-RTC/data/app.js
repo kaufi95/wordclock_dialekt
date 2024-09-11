@@ -2,7 +2,56 @@ const colorPicker = document.getElementById('color-picker');
 
 const languageButtons = document.querySelectorAll('input[name="language"]');
 const brightnessButtons = document.querySelectorAll('input[name="brightness"]');
-const termination_input = document.getElementById('termination');
+const terminateAP_input = document.getElementById('terminateAP');
+
+const wifi_div = document.getElementById('wifi');
+const ntp_input = document.getElementById('ntp');
+const ssid_input = document.getElementById('ssid');
+const pw_input = document.getElementById('pw');
+const status = document.getElementById('status');
+
+// hide the div container with id "wifi" if the ntp checkbox is unchecked
+ntp_input.addEventListener('change', () => {
+  wifi_div.style.display = ntp_input.checked ? 'block' : 'none';
+});
+
+if (!!window.EventSource) {
+  var source = new EventSource('/events');
+
+  source.addEventListener(
+    'open',
+    function (e) {
+      console.log('Events Connected');
+    },
+    false
+  );
+  source.addEventListener(
+    'error',
+    function (e) {
+      if (e.target.readyState != EventSource.OPEN) {
+        console.log('Events Disconnected');
+      }
+    },
+    false
+  );
+
+  source.addEventListener(
+    'message',
+    function (e) {
+      console.log('message', e.data);
+    },
+    false
+  );
+
+  source.addEventListener(
+    'status',
+    function (e) {
+      console.log('status', e.data);
+      document.getElementById('status').innerHTML = e.data;
+    },
+    false
+  );
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   onLoad();
@@ -12,7 +61,11 @@ function updateUI(data) {
   updateColor(data.color);
   updateLanguage(data.language);
   updateBrightness(data.brightness);
-  updateTermination(data.termination);
+  updateTerminateAP(data.terminateAP);
+  updateSSID(data.ssid);
+  updatePW('');
+  updateStatus(data.status);
+  updateNTP(data.ntp);
 }
 
 function updateColor(color) {
@@ -36,8 +89,25 @@ function updateBrightness(brightness) {
   });
 }
 
-function updateTermination(termination) {
-  termination_input.checked = termination;
+function updateTerminateAP(terminateAP) {
+  terminateAP_input.checked = terminateAP;
+}
+
+function updateNTP(ntp) {
+  ntp_input.checked = ntp;
+  // wifi_div.style.display = ntp ? 'block' : 'none';
+}
+
+function updateSSID(ssid) {
+  ssid_input.value = ssid;
+}
+
+function updatePW(pw) {
+  pw_input.value = pw;
+}
+
+function updateStatus(status) {
+  status.innerText = status;
 }
 
 function getSelectedColor() {
@@ -64,8 +134,20 @@ function getSelectedBrightness() {
   return selectedBrightness;
 }
 
-function getTermination() {
-  return termination_input.checked;
+function getTerminateAP() {
+  return terminateAP_input.checked;
+}
+
+function getNTP() {
+  return ntp_input.checked;
+}
+
+function getSSID() {
+  return ssid_input.value;
+}
+
+function getPW() {
+  return pw_input.value;
 }
 
 function onLoad() {
@@ -88,14 +170,20 @@ function sendPostRequest() {
   const color = getSelectedColor();
   const language = getSelectedLanguage();
   const brightness = getSelectedBrightness();
-  const termination = getTermination();
+  const terminateAP = getTerminateAP();
+  const ntp = getNTP();
+  const ssid = getSSID();
+  const pw = getPW();
 
   const body = {
     datetime: Math.round(new Date().getTime() / 1000),
     color: color,
     language: language,
     brightness: brightness,
-    termination: termination
+    terminateAP: terminateAP,
+    ntp: ntp,
+    ssid: ssid,
+    pw: pw
   };
 
   fetch('http://' + window.location.host + '/update', {
