@@ -2,7 +2,7 @@
   "color": 65535,
   "language": "dialekt",
   "brightness": 128,
-  "termination": true,
+  "terminateAP": true,
   "ntp": false,
   "ssid": "",
   "pw": ""
